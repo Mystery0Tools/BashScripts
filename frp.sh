@@ -21,6 +21,21 @@ Info="${Green_font_prefix}[信息]${Font_color_suffix}"
 Error="${Red_font_prefix}[错误]${Font_color_suffix}"
 Tip="${Green_font_prefix}[注意]${Font_color_suffix}"
 
+check_root(){
+	[[ $EUID != 0 ]] && echo -e "${Error} 当前非ROOT账号(或没有ROOT权限)，无法继续操作，请更换ROOT账号或使用 ${Green_background_prefix}sudo su${Font_color_suffix} 命令获取临时ROOT权限（执行后可能会提示输入当前账号的密码）。" && exit 1
+}
+
+check_installed_status_no_exit(){
+    case "$1" in
+        'frpc')
+	        [[ -e ${frpc} ]] && has_frpc="true"
+        ;;
+        'frps')
+	        [[ -e ${frps} ]] && has_frps="true"
+        ;;
+    esac
+}
+
 check_installed_status(){
     case "$1" in
         'frpc')
@@ -72,8 +87,8 @@ download_frp(){
     frp_name="frp_${frp_new_ver}_linux_${release}"
 
     [[ ! -s "${frp_name}.tar.gz" ]] && echo -e "${Error} frp 压缩包下载失败 !" && exit 1
-    tar -zxvf "$frp_name"
-    [[ ! -e "/usr/local/${frp_name}" ]] && echo -e "${Error} frp 解压失败 !" && rm -rf "${frp_name}.tar.gz" && exit 1
+    tar -zxvf "$frp_name.tar.gz"
+    [[ ! -e "/tmp/${frp_name}" ]] && echo -e "${Error} frp 解压失败 !" && rm -rf "${frp_name}.tar.gz" && exit 1
     frp_dir_path="/tmp/$frp_name"
 }
 
@@ -218,14 +233,33 @@ install_frp_switch(){
     read -e -p "(默认: 取消):" install_type
 	[[ -z "${install_type}" ]] && echo "已取消..." && exit 1
 	if [[ ${install_type} == "1" ]]; then
+		check_installed_status_no_exit "frpc"
+		if [[ ${has_frpc} == "true" ]];then
+			echo -e "${Error} frpc 已安装" && exit 1
+		fi
+		check_new_ver
         download_frp
         install_frpc="true"
         copy_binary
 	elif [[ ${install_type} == "2" ]]; then
+		check_installed_status_no_exit "frps"
+		if [[ ${has_frps} == "true" ]];then
+			echo -e "${Error} frps 已安装" && exit 1
+		fi
+		check_new_ver
         download_frp
         install_frps="true"
         copy_binary
 	elif [[ ${install_type} == "3" ]]; then
+		check_installed_status_no_exit "frpc"
+		if [[ ${has_frpc} == "true" ]];then
+			echo -e "${Error} frpc 已安装" && exit 1
+		fi
+		check_installed_status_no_exit "frps"
+		if [[ ${has_frps} == "true" ]];then
+			echo -e "${Error} frps 已安装" && exit 1
+		fi
+		check_new_ver
         download_frp
         install_frpc="true"
         install_frps="true"
@@ -311,6 +345,10 @@ show_status(){
     fi
 }
 
+check_root
+check_system
+mkdir '/etc/frp'
+mkdir '/var/log/frp'
 echo && echo -e " frp 一键安装管理脚本 ${Red_font_prefix}[v${sh_ver}]${Font_color_suffix}
   -- by Mystery0 --
   
