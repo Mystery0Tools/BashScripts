@@ -100,7 +100,6 @@ copy_binary(){
             # 复制配置文件
             mv "$frp_dir_path/frpc.ini" "$frpc_conf"
         fi
-        mv "$frp_dir_path/frpc" "$frpc"
         mv "$frp_dir_path/systemd/frpc.service" "$frpc_service"
         mv "$frp_dir_path/systemd/frpc@.service" "$frpc_service1"
     fi
@@ -111,7 +110,6 @@ copy_binary(){
             # 复制配置文件
             mv "$frp_dir_path/frps.ini" "$frps_conf"
         fi
-        mv "$frp_dir_path/frps" "$frps"
         mv "$frp_dir_path/systemd/frps.service" "$frps_service"
         mv "$frp_dir_path/systemd/frps@.service" "$frps_service1"
     fi
@@ -320,6 +318,39 @@ uninstall_frp(){
 	fi
 }
 
+edit_frp_conf(){
+	echo -e "${Tip} 手动修改配置文件须知：
+${Green_font_prefix}1.${Font_color_suffix} 配置文件中含有中文注释，如果你的 服务器系统 或 SSH工具 不支持中文显示，将会乱码(请本地编辑)。
+${Green_font_prefix}2.${Font_color_suffix} 一会自动打开配置文件后，就可以开始手动编辑文件了。
+${Green_font_prefix}3.${Font_color_suffix} 如果要退出并保存文件，那么按 ${Green_font_prefix}Ctrl+X键${Font_color_suffix} 后，输入 ${Green_font_prefix}y${Font_color_suffix} 后，再按一下 ${Green_font_prefix}回车键${Font_color_suffix} 即可。
+${Green_font_prefix}4.${Font_color_suffix} 如果要退出并不保存文件，那么按 ${Green_font_prefix}Ctrl+X键${Font_color_suffix} 后，输入 ${Green_font_prefix}n${Font_color_suffix} 即可。
+${Green_font_prefix}5.${Font_color_suffix} 如果你想在本地编辑配置文件，那么配置文件位置： ${Green_font_prefix}/etc/frp/$1.ini${Font_color_suffix} (注意是隐藏目录) 。" && echo
+	read -e -p "如果已经理解 nano 使用方法，请按任意键继续，如要取消请使用 Ctrl+C 。" var
+    case "$1" in
+        'frpc')
+			nano "${frpc_conf}"
+        ;;
+        'frps')
+			nano "${frps_conf}"
+        ;;
+    esac
+}
+
+edit_frp_conf_switch(){
+	echo && echo -e "你要编辑什么的配置文件？
+ ${Green_font_prefix}1.${Font_color_suffix}  frpc
+ ${Green_font_prefix}2.${Font_color_suffix}  frps" && echo
+    read -e -p "(默认: 取消):" install_type
+	[[ -z "${install_type}" ]] && echo "已取消..." && exit 1
+	if [[ ${install_type} == "1" ]]; then
+        edit_frp_conf "frpc"
+	elif [[ ${install_type} == "2" ]]; then
+        edit_frp_conf "frps"
+	else
+		echo -e "${Error} 请输入正确的数字(1-2)" && exit 1
+	fi
+}
+
 show_status(){
     case "$1" in
         'frpc')
@@ -363,8 +394,7 @@ echo && echo -e " frp 一键安装管理脚本 ${Red_font_prefix}[v${sh_ver}]${F
  ${Green_font_prefix} 6.${Font_color_suffix} 重启 frp
 ————————————
  ${Green_font_prefix} 7.${Font_color_suffix} 修改 配置文件
- ${Green_font_prefix} 8.${Font_color_suffix} 查看 配置信息
- ${Green_font_prefix} 9.${Font_color_suffix} 查看 日志信息
+ ${Green_font_prefix} 8.${Font_color_suffix} 查看 日志信息
 ————————————
  ${Green_font_prefix}10.${Font_color_suffix} 退出脚本
 ————————————" && echo
@@ -395,12 +425,9 @@ case "$num" in
 	restart_frp_switch
 	;;
 	7)
-	# Set_aria2
+	edit_frp_conf_switch
 	;;
 	8)
-	# View_Aria2
-	;;
-	9)
 	view_Log_switch
 	;;
 	10)
