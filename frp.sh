@@ -81,6 +81,34 @@ check_new_ver(){
 	fi
 }
 
+update_frp(){
+	check_installed_status_no_exit "frpc"
+	if [[ $has_frpc != "true" ]];then
+		echo -e "${Error} frpc 没有安装 !"
+	fi
+	check_installed_status_no_exit "frps"
+	if [[ $has_frps != "true" ]];then
+		echo -e "${Error} frps 没有安装 !"
+	fi
+	check_new_ver
+	if [[ $has_frpc == "true" ]];then
+    	install_frpc="true"
+		stop_frp "frpc"
+	fi
+	if [[ $has_frps == "true" ]];then
+    	install_frps="true"
+		stop_frp "frps"
+	fi
+    download_frp
+    copy_binary
+	if [[ $has_frpc == "true" ]];then
+		start_frp "frpc"
+	fi
+	if [[ $has_frps == "true" ]];then
+		start_frp "frps"
+	fi
+}
+
 download_frp(){
     cd "/tmp"
     wget -N --no-check-certificate "https://github.com/fatedier/frp/releases/download/v${frp_new_ver}/frp_${frp_new_ver}_linux_${release}.tar.gz"
@@ -93,7 +121,7 @@ download_frp(){
 }
 
 copy_binary(){
-    if [[ ${install_frpc} = "true" ]]; then
+    if [[ ${install_frpc} == "true" ]]; then
         # 安装frpc
         mv "$frp_dir_path/frpc" "$frpc"
         if [[ ! -s "${frpc_conf}" ]];then
@@ -103,7 +131,7 @@ copy_binary(){
         mv "$frp_dir_path/systemd/frpc.service" "$frpc_service"
         mv "$frp_dir_path/systemd/frpc@.service" "$frpc_service1"
     fi
-    if [[ ${install_frps} = "true" ]]; then
+    if [[ ${install_frps} == "true" ]]; then
         # 安装frps
         mv "$frp_dir_path/frps" "$frps"
         if [[ ! -s "${frps_conf}" ]];then
@@ -410,7 +438,7 @@ case "$num" in
 	install_frp_switch
 	;;
 	2)
-	# update_frp
+	update_frp
 	;;
 	3)
 	uninstall_frp_switch
