@@ -1,0 +1,13 @@
+[Unit]
+Description=Frp Client Service
+After=network.target
+
+[Service]
+Type=idle
+User=nobody
+Restart=on-failure
+RestartSec=5s
+ExecStart=/usr/bin/frpc -c /etc/frp/%i.ini > /var/log/frp/frpc.log
+
+[Install]
+WantedBy=multi-user.target
