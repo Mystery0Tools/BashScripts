@@ -4,7 +4,7 @@
 # 该脚本参考了Toyo的脚本源码
 #
 
-sh_ver="1.0.1"
+sh_ver="1.0.2"
 frpc="/usr/bin/frpc"
 frpc_conf="/etc/frp/frpc.ini"
 frpc_log="/var/log/frp/frpc.log"
@@ -296,10 +296,10 @@ install_frp_switch(){
 		fi
 		echo -e "${Info} 开始下载/安装 主程序..."
 		check_new_ver
+        install_frpc="true"
         download_frp
 		echo -e "${Info} 开始下载/安装 服务脚本..."
 		download_frp_conf
-        install_frpc="true"
 		echo -e "${Info} 开始安装 主程序..."
         copy_binary
 		echo -e "${Info} frpc 安装成功！"
@@ -310,10 +310,10 @@ install_frp_switch(){
 		fi
 		echo -e "${Info} 开始下载/安装 主程序..."
 		check_new_ver
+        install_frps="true"
         download_frp
 		echo -e "${Info} 开始下载/安装 服务脚本..."
 		download_frp_conf
-        install_frps="true"
 		echo -e "${Info} 开始安装 主程序..."
         copy_binary
 		echo -e "${Info} frps 安装成功！"
@@ -328,11 +328,11 @@ install_frp_switch(){
 		fi
 		echo -e "${Info} 开始下载/安装 主程序..."
 		check_new_ver
+        install_frpc="true"
+        install_frps="true"
         download_frp
 		echo -e "${Info} 开始下载/安装 服务脚本..."
 		download_frp_conf
-        install_frpc="true"
-        install_frps="true"
 		echo -e "${Info} 开始安装 主程序..."
         copy_binary
 		echo -e "${Info} frpc & frps 安装成功！"
