@@ -64,6 +64,15 @@ check_system(){
     fi
 }
 
+check_dir(){
+	if [[ ! -e '/etc/frp' ]];then
+		mkdir '/etc/frp'
+	fi
+	if [[ ! -e '/var/log/frp' ]];then
+		mkdir '/var/log/frp'
+	fi
+}
+
 check_new_ver(){
 	echo -e "${Info} 请输入 frp 版本号，格式如：[ 1.34.0 ]，获取地址：[ https://github.com/fatedier/frp/releases ]"
 	read -e -p "默认回车自动获取最新版本号:" frp_new_ver
@@ -409,8 +418,8 @@ show_status(){
 
 check_root
 check_system
-mkdir '/etc/frp'
-mkdir '/var/log/frp'
+check_dir
+
 echo && echo -e " frp 一键安装管理脚本 ${Red_font_prefix}[v${sh_ver}]${Font_color_suffix}
   -- by Mystery0 --
   
