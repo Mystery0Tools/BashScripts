@@ -90,6 +90,9 @@ update_frp(){
 	if [[ $has_frps != "true" ]];then
 		echo -e "${Error} frps 没有安装 !"
 	fi
+	if [[ $has_frpc != "true" && $has_frps != "true" ]];then
+		exit 1
+	fi
 	check_new_ver
 	if [[ $has_frpc == "true" ]];then
     	install_frpc="true"
