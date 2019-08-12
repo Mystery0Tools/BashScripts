@@ -102,6 +102,7 @@ update_frp(){
 	if [[ $has_frpc != "true" && $has_frps != "true" ]];then
 		exit 1
 	fi
+	echo -e "${Info} 开始下载/安装 主程序..."
 	check_new_ver
 	if [[ $has_frpc == "true" ]];then
     	install_frpc="true"
@@ -112,6 +113,9 @@ update_frp(){
 		stop_frp "frps"
 	fi
     download_frp
+	echo -e "${Info} 开始下载/安装 服务脚本..."
+	download_frp_conf
+	echo -e "${Info} 开始安装 主程序..."
     copy_binary
 	if [[ $has_frpc == "true" ]];then
 		start_frp "frpc"
@@ -119,6 +123,7 @@ update_frp(){
 	if [[ $has_frps == "true" ]];then
 		start_frp "frps"
 	fi
+	echo -e "${Info} frpc 更新成功！"
 }
 
 download_frp(){
@@ -445,6 +450,13 @@ show_status(){
     fi
 }
 
+update_shell(){
+	sh_new_ver=$(wget --no-check-certificate -qO- -t1 -T3 "https://raw.githubusercontent.com/Mystery0Tools/BashScripts/master/aria2.sh"|grep 'sh_ver="'|awk -F "=" '{print $NF}'|sed 's/\"//g'|head -1) && sh_new_type="github"
+	[[ -z ${sh_new_ver} ]] && echo -e "${Error} 无法链接到 Github !" && exit 0
+	wget -N --no-check-certificate "https://raw.githubusercontent.com/Mystery0Tools/BashScripts/master/aria2.sh" && chmod +x aria2.sh
+	echo -e "脚本已更新为最新版本[ ${sh_new_ver} ] !(注意：因为更新方式为直接覆盖当前运行的脚本，所以可能下面会提示一些报错，无视即可)" && exit 0
+}
+
 check_root
 check_system
 check_dir
@@ -473,7 +485,7 @@ echo
 read -e -p " 请输入数字 [0-10]:" num
 case "$num" in
 	0)
-	# Update_Shell
+	update_shell
 	;;
 	1)
 	install_frp_switch
