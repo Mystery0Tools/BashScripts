@@ -179,6 +179,7 @@ start_frp(){
 	check_pid "$1"
 	[[ ! -z ${PID} ]] && echo -e "${Error} $1 正在运行，请检查 !" && exit 1
 	service "$1" start
+	echo -e "${Info} $1 启动成功！"
 }
 
 stop_frp_switch(){
@@ -205,6 +206,7 @@ stop_frp(){
 	check_pid "$1"
 	[[ -z ${PID} ]] && echo -e "${Error} $1 没有运行，请检查 !" && exit 1
 	service "$1" stop
+	echo -e "${Info} $1 停止成功！"
 }
 
 restart_frp_switch(){
@@ -231,6 +233,7 @@ restart_frp(){
 	check_pid "$1"
 	[[ ! -z ${PID} ]] && service "$1" stop
 	service "$1" start
+	echo -e "${Info} $1 重启成功！"
 }
 
 view_Log_switch(){
@@ -279,6 +282,7 @@ install_frp_switch(){
         download_frp
         install_frpc="true"
         copy_binary
+		echo -e "${Info} frpc 安装成功！"
 	elif [[ ${install_type} == "2" ]]; then
 		check_installed_status_no_exit "frps"
 		if [[ ${has_frps} == "true" ]];then
@@ -288,6 +292,7 @@ install_frp_switch(){
         download_frp
         install_frps="true"
         copy_binary
+		echo -e "${Info} frps 安装成功！"
 	elif [[ ${install_type} == "3" ]]; then
 		check_installed_status_no_exit "frpc"
 		if [[ ${has_frpc} == "true" ]];then
@@ -302,6 +307,7 @@ install_frp_switch(){
         install_frpc="true"
         install_frps="true"
         copy_binary
+		echo -e "${Info} frpc & frps 安装成功！"
 	else
 		echo -e "${Error} 请输入正确的数字(1-3)" && exit 1
 	fi
