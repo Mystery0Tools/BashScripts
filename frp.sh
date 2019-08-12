@@ -132,6 +132,21 @@ download_frp(){
     frp_dir_path="/tmp/$frp_name"
 }
 
+download_frp_conf(){
+    if [[ ${install_frpc} == "true" ]]; then
+    	wget -N --no-check-certificate "https://raw.githubusercontent.com/Mystery0Tools/BashScripts/master/service/frpc.service"
+    	wget -N --no-check-certificate "https://raw.githubusercontent.com/Mystery0Tools/BashScripts/master/service/frpc@.service"
+        mv "frpc.service" "$frpc_service"
+        mv "frpc@.service" "$frpc_service1"
+    fi
+    if [[ ${install_frps} == "true" ]]; then
+    	wget -N --no-check-certificate "https://raw.githubusercontent.com/Mystery0Tools/BashScripts/master/service/frps.service"
+    	wget -N --no-check-certificate "https://raw.githubusercontent.com/Mystery0Tools/BashScripts/master/service/frps@.service"
+        mv "frps.service" "$frps_service"
+        mv "frps@.service" "$frps_service1"
+    fi
+}
+
 copy_binary(){
     if [[ ${install_frpc} == "true" ]]; then
         # 安装frpc
@@ -140,8 +155,6 @@ copy_binary(){
             # 复制配置文件
             mv "$frp_dir_path/frpc.ini" "$frpc_conf"
         fi
-        mv "$frp_dir_path/systemd/frpc.service" "$frpc_service"
-        mv "$frp_dir_path/systemd/frpc@.service" "$frpc_service1"
     fi
     if [[ ${install_frps} == "true" ]]; then
         # 安装frps
@@ -150,8 +163,6 @@ copy_binary(){
             # 复制配置文件
             mv "$frp_dir_path/frps.ini" "$frps_conf"
         fi
-        mv "$frp_dir_path/systemd/frps.service" "$frps_service"
-        mv "$frp_dir_path/systemd/frps@.service" "$frps_service1"
     fi
 }
 
@@ -278,9 +289,13 @@ install_frp_switch(){
 		if [[ ${has_frpc} == "true" ]];then
 			echo -e "${Error} frpc 已安装" && exit 1
 		fi
+		echo -e "${Info} 开始下载/安装 主程序..."
 		check_new_ver
         download_frp
+		echo -e "${Info} 开始下载/安装 服务脚本..."
+		download_frp_conf
         install_frpc="true"
+		echo -e "${Info} 开始安装 主程序..."
         copy_binary
 		echo -e "${Info} frpc 安装成功！"
 	elif [[ ${install_type} == "2" ]]; then
@@ -288,9 +303,13 @@ install_frp_switch(){
 		if [[ ${has_frps} == "true" ]];then
 			echo -e "${Error} frps 已安装" && exit 1
 		fi
+		echo -e "${Info} 开始下载/安装 主程序..."
 		check_new_ver
         download_frp
+		echo -e "${Info} 开始下载/安装 服务脚本..."
+		download_frp_conf
         install_frps="true"
+		echo -e "${Info} 开始安装 主程序..."
         copy_binary
 		echo -e "${Info} frps 安装成功！"
 	elif [[ ${install_type} == "3" ]]; then
@@ -302,10 +321,14 @@ install_frp_switch(){
 		if [[ ${has_frps} == "true" ]];then
 			echo -e "${Error} frps 已安装" && exit 1
 		fi
+		echo -e "${Info} 开始下载/安装 主程序..."
 		check_new_ver
         download_frp
+		echo -e "${Info} 开始下载/安装 服务脚本..."
+		download_frp_conf
         install_frpc="true"
         install_frps="true"
+		echo -e "${Info} 开始安装 主程序..."
         copy_binary
 		echo -e "${Info} frpc & frps 安装成功！"
 	else
