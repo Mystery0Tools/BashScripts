@@ -4,7 +4,7 @@
 # 该脚本参考了Toyo的脚本源码
 #
 
-sh_ver="1.0.2"
+sh_ver="1.0.3"
 frpc="/usr/bin/frpc"
 frpc_conf="/etc/frp/frpc.ini"
 frpc_log="/var/log/frp/frpc.log"
