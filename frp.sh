@@ -4,7 +4,7 @@
 # 该脚本参考了Toyo的脚本源码
 #
 
-sh_ver="1.0.3"
+sh_ver="1.0.4"
 frpc="/usr/bin/frpc"
 frpc_conf="/etc/frp/frpc.ini"
 frpc_log="/var/log/frp/frpc.log"
@@ -74,7 +74,7 @@ check_dir() {
 }
 
 check_new_ver() {
-  echo -e "${Info} 请输入 frp 版本号，格式如：[ 1.34.0 ]，获取地址：[ https://github.com/fatedier/frp/releases ]"
+  echo -e "${Info} 请输入 frp 版本号，格式如：[ 0.28.2 ]，获取地址：[ https://github.com/fatedier/frp/releases ]"
   read -e -p "默认回车自动获取最新版本号:" frp_new_ver
   if [[ -z ${frp_new_ver} ]]; then
     frp_new_ver=$(wget --no-check-certificate -qO- https://api.github.com/repos/fatedier/frp/releases | grep -o '"tag_name": ".*"' | head -n 1 | sed 's/"//g;s/v//g' | sed 's/tag_name: //g')
@@ -127,7 +127,7 @@ update_frp() {
 }
 
 download_frp() {
-  cd "/tmp"
+  cd "/tmp" || exit
   wget -N --no-check-certificate "https://github.com/fatedier/frp/releases/download/v${frp_new_ver}/frp_${frp_new_ver}_linux_${release}.tar.gz"
   frp_name="frp_${frp_new_ver}_linux_${release}"
 
@@ -193,7 +193,7 @@ start_frp_switch() {
 start_frp() {
   check_installed_status "$1"
   check_pid "$1"
-  [[ ! -z ${PID} ]] && echo -e "${Error} $1 正在运行，请检查 !" && exit 1
+  [[ -n ${PID} ]] && echo -e "${Error} $1 正在运行，请检查 !" && exit 1
   service "$1" start
   echo -e "${Info} $1 启动成功！"
 }
@@ -247,7 +247,7 @@ restart_frp_switch() {
 restart_frp() {
   check_installed_status "$1"
   check_pid "$1"
-  [[ ! -z ${PID} ]] && service "$1" stop
+  [[ -n ${PID} ]] && service "$1" stop
   service "$1" start
   echo -e "${Info} $1 重启成功！"
 }
@@ -275,9 +275,9 @@ view_Log() {
     tail -f ${frpc_log}
     ;;
   'frps')
-    [[ ! -e ${frpc_log} ]] && echo -e "${Error} frps 日志文件不存在 !" && exit 1
-    echo && echo -e "${Tip} 按 ${Red_font_prefix}Ctrl+C${Font_color_suffix} 终止查看日志" && echo -e "如果需要查看完整日志内容，请用 ${Red_font_prefix}cat ${frpc_log}${Font_color_suffix} 命令。" && echo
-    tail -f ${frpc_log}
+    [[ ! -e ${frps_log} ]] && echo -e "${Error} frps 日志文件不存在 !" && exit 1
+    echo && echo -e "${Tip} 按 ${Red_font_prefix}Ctrl+C${Font_color_suffix} 终止查看日志" && echo -e "如果需要查看完整日志内容，请用 ${Red_font_prefix}cat ${frps_log}${Font_color_suffix} 命令。" && echo
+    tail -f ${frps_log}
     ;;
   esac
 }
@@ -368,7 +368,7 @@ uninstall_frp() {
   [[ -z ${unyn} ]] && unyn="n"
   if [[ ${unyn} == [Yy] ]]; then
     check_pid "$1"
-    [[ ! -z $PID ]] && kill -9 ${PID}
+    [[ -n $PID ]] && kill -9 "${PID}"
     case "$1" in
     'frpc')
       rm -rf "${frpc}"
@@ -384,8 +384,6 @@ uninstall_frp() {
       ;;
     esac
     rm -rf "${frpc}"
-    rm -rf "${Folder}"
-    rm -rf "${file}"
     echo && echo "$1 卸载完成 !" && echo
   else
     echo && echo "卸载已取消..." && echo
@@ -440,7 +438,7 @@ show_status() {
   esac
   if [[ ${check} == "true" ]]; then
     check_pid "$1"
-    if [[ ! -z "${PID}" ]]; then
+    if [[ -n "${PID}" ]]; then
       echo -e "$1 当前状态: ${Green_font_prefix}已安装${Font_color_suffix} 并 ${Green_font_prefix}已启动${Font_color_suffix}"
     else
       echo -e "$1 当前状态: ${Green_font_prefix}已安装${Font_color_suffix} 但 ${Red_font_prefix}未启动${Font_color_suffix}"
