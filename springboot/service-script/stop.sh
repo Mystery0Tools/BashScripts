@@ -1,5 +1,5 @@
 #!/bin/bash
 
-PROJECT_NAME=$1
+PROJECT_NAME=project_name
 
 docker stop "$PROJECT_NAME"

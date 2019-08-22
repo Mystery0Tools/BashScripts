@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PROJECT_NAME=$1
+PROJECT_NAME=project_name
 
 bash stop.sh "$PROJECT_NAME"
 sleep 3
