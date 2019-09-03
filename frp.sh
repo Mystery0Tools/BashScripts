@@ -4,7 +4,7 @@
 # 该脚本参考了Toyo的脚本源码
 #
 
-sh_ver="1.0.5"
+sh_ver="1.0.6"
 frpc="/usr/bin/frpc"
 frpc_conf="/etc/frp/frpc.ini"
 frpc_service="/lib/systemd/system/frpc.service"
@@ -69,7 +69,7 @@ check_dir() {
 }
 
 check_new_ver() {
-  echo -e "${Info} 请输入 frp 版本号，格式如：[ 0.28.2 ]，获取地址：[ https://github.com/fatedier/frp/releases ]"
+  echo -e "${Info} 请输入 frp 版本号，格式如：[ 0.29.0 ]，获取地址：[ https://github.com/fatedier/frp/releases ]"
   read -e -p "默认回车自动获取最新版本号:" frp_new_ver
   if [[ -z ${frp_new_ver} ]]; then
     frp_new_ver=$(wget --no-check-certificate -qO- https://api.github.com/repos/fatedier/frp/releases | grep -o '"tag_name": ".*"' | head -n 1 | sed 's/"//g;s/v//g' | sed 's/tag_name: //g')
