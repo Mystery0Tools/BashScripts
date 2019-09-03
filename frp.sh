@@ -66,9 +66,6 @@ check_dir() {
   if [[ ! -e '/etc/frp' ]]; then
     mkdir '/etc/frp'
   fi
-  if [[ ! -e '/var/log/frp' ]]; then
-    mkdir '/var/log/frp'
-  fi
 }
 
 check_new_ver() {
@@ -368,18 +365,15 @@ uninstall_frp() {
     case "$1" in
     'frpc')
       rm -rf "${frpc}"
-      rm -rf "${frpc_conf}"
       rm -rf "${frpc_service}"
       rm -rf "${frpc_service1}"
       ;;
     'frps')
       rm -rf "${frps}"
-      rm -rf "${frps_conf}"
       rm -rf "${frps_service}"
       rm -rf "${frps_service1}"
       ;;
     esac
-    rm -rf "${frpc}"
     echo && echo "$1 卸载完成 !" && echo
   else
     echo && echo "卸载已取消..." && echo
