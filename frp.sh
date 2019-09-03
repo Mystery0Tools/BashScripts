@@ -38,7 +38,7 @@ check_installed_status() {
   case "$1" in
   'frpc')
     [[ ! -e ${frpc} ]] && echo -e "${Error} frpc 没有安装，请检查 !" && exit 1
-    [[ ! -e ${frps_conf} ]] && echo -e "${Error} frpc 配置文件不存在，请检查 !" && [[ $1 != "un" ]] && exit 1
+    [[ ! -e ${frpc_conf} ]] && echo -e "${Error} frpc 配置文件不存在，请检查 !" && [[ $1 != "un" ]] && exit 1
     ;;
   'frps')
     [[ ! -e ${frps} ]] && echo -e "${Error} frps 没有安装，请检查 !" && exit 1
