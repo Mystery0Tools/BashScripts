@@ -4,15 +4,13 @@
 # 该脚本参考了Toyo的脚本源码
 #
 
-sh_ver="1.0.4"
+sh_ver="1.0.5"
 frpc="/usr/bin/frpc"
 frpc_conf="/etc/frp/frpc.ini"
-frpc_log="/var/log/frp/frpc.log"
 frpc_service="/lib/systemd/system/frpc.service"
 frpc_service1="/lib/systemd/system/frpc@.service"
 frps="/usr/bin/frps"
 frps_conf="/etc/frp/frps.ini"
-frps_log="/var/log/frp/frps.log"
 frps_service="/lib/systemd/system/frps.service"
 frps_service1="/lib/systemd/system/frps@.service"
 
@@ -270,14 +268,12 @@ view_Log_switch() {
 view_Log() {
   case "$1" in
   'frpc')
-    [[ ! -e ${frpc_log} ]] && echo -e "${Error} frpc 日志文件不存在 !" && exit 1
-    echo && echo -e "${Tip} 按 ${Red_font_prefix}Ctrl+C${Font_color_suffix} 终止查看日志" && echo -e "如果需要查看完整日志内容，请用 ${Red_font_prefix}cat ${frpc_log}${Font_color_suffix} 命令。" && echo
-    tail -f ${frpc_log}
+    echo && echo -e "${Tip} 按 ${Red_font_prefix}Ctrl+C${Font_color_suffix} 终止查看日志" && echo -e "如果需要查看完整日志内容，请用 ${Red_font_prefix}journalctl -u frpc.service --since today${Font_color_suffix} 命令。" && echo
+    journalctl -u frpc -f
     ;;
   'frps')
-    [[ ! -e ${frps_log} ]] && echo -e "${Error} frps 日志文件不存在 !" && exit 1
-    echo && echo -e "${Tip} 按 ${Red_font_prefix}Ctrl+C${Font_color_suffix} 终止查看日志" && echo -e "如果需要查看完整日志内容，请用 ${Red_font_prefix}cat ${frps_log}${Font_color_suffix} 命令。" && echo
-    tail -f ${frps_log}
+    echo && echo -e "${Tip} 按 ${Red_font_prefix}Ctrl+C${Font_color_suffix} 终止查看日志" && echo -e "如果需要查看完整日志内容，请用 ${Red_font_prefix}journalctl -u frps.service --since today${Font_color_suffix} 命令。" && echo
+    journalctl -u frps -f
     ;;
   esac
 }
