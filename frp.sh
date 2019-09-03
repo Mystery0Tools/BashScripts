@@ -418,11 +418,15 @@ show_status() {
   'frpc')
     if [[ -e ${frpc} ]]; then
       check="true"
+    else
+      check="false"
     fi
     ;;
   'frps')
     if [[ -e ${frps} ]]; then
       check="true"
+    else
+      check="false"
     fi
     ;;
   esac
