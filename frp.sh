@@ -121,7 +121,7 @@ update_frp() {
   if [[ $has_frps == "true" ]]; then
     start_frp "frps"
   fi
-  echo -e "${Info} frpc 更新成功！"
+  echo -e "${Info} 更新完成！"
 }
 
 download_frp() {
@@ -192,7 +192,7 @@ start_frp() {
   check_installed_status "$1"
   check_pid "$1"
   [[ -n ${PID} ]] && echo -e "${Error} $1 正在运行，请检查 !" && exit 1
-  service "$1" start
+  systemctl start "$1"
   echo -e "${Info} $1 启动成功！"
 }
 
@@ -219,7 +219,7 @@ stop_frp() {
   check_installed_status "$1"
   check_pid "$1"
   [[ -z ${PID} ]] && echo -e "${Error} $1 没有运行，请检查 !" && exit 1
-  service "$1" stop
+  systemctl stop "$1"
   echo -e "${Info} $1 停止成功！"
 }
 
@@ -245,8 +245,8 @@ restart_frp_switch() {
 restart_frp() {
   check_installed_status "$1"
   check_pid "$1"
-  [[ -n ${PID} ]] && service "$1" stop
-  service "$1" start
+  [[ -n ${PID} ]] && systemctl stop "$1"
+  systemctl start "$1"
   echo -e "${Info} $1 重启成功！"
 }
 
