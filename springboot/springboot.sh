@@ -4,10 +4,10 @@ AFTER=$name
 BEFORE=project_name
 
 echo "正在创建目录……"
-mkdir /var/"$PROJECT_NAME"/
-mkdir /var/"$PROJECT_NAME"/config
-mkdir /var/"$PROJECT_NAME"/logs
-cd /var/"$PROJECT_NAME"/ || exit
+mkdir /var/"$AFTER"/
+mkdir /var/"$AFTER"/config
+mkdir /var/"$AFTER"/logs
+cd /var/"$AFTER"/ || exit
 
 echo "正在下载管理脚本……"
 wget https://github.com/Mystery0Tools/BashScripts/raw/master/springboot/service-script/start-origin.sh
