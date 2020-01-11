@@ -144,6 +144,8 @@ update_frp_from_local() {
     stop_frp "frps"
   fi
   cd "/tmp" || exit
+  rm "/tmp/frp"
+  mkdir "/tmp/frp"
   tar -zxvf "$local_path" -C "/tmp/frp"
   [[ ! -e "/tmp/frp" ]] && echo -e "${Error} frp 解压失败 !" && rm -rf "frp" && exit 1
   frp_dir_path="/tmp/frp"
@@ -389,6 +391,8 @@ install_frp_switch_from_local() {
     read -e -p " 请输入本地文件路径（请确保架构正确）:" local_path
     [[ ! -s "$local_path" ]] && echo -e "${Error} frp 压缩包不存在 !" && exit 1
     cd "/tmp" || exit
+    rm "/tmp/frp"
+    mkdir "/tmp/frp"
     tar -zxvf "$local_path" -C "/tmp/frp"
     [[ ! -e "/tmp/frp" ]] && echo -e "${Error} frp 解压失败 !" && rm -rf "frp" && exit 1
     frp_dir_path="/tmp/frp"
@@ -406,6 +410,8 @@ install_frp_switch_from_local() {
     read -e -p " 请输入本地文件路径（请确保架构正确）:" local_path
     [[ ! -s "$local_path" ]] && echo -e "${Error} frp 压缩包不存在 !" && exit 1
     cd "/tmp" || exit
+    rm "/tmp/frp"
+    mkdir "/tmp/frp"
     tar -zxvf "$local_path" -C "/tmp/frp"
     [[ ! -e "/tmp/frp" ]] && echo -e "${Error} frp 解压失败 !" && rm -rf "frp" && exit 1
     frp_dir_path="/tmp/frp"
@@ -428,6 +434,8 @@ install_frp_switch_from_local() {
     read -e -p " 请输入本地文件路径（请确保架构正确）:" local_path
     [[ ! -s "$local_path" ]] && echo -e "${Error} frp 压缩包不存在 !" && exit 1
     cd "/tmp" || exit
+    rm "/tmp/frp"
+    mkdir "/tmp/frp"
     tar -zxvf "$local_path" -C "/tmp/frp"
     [[ ! -e "/tmp/frp" ]] && echo -e "${Error} frp 解压失败 !" && rm -rf "frp" && exit 1
     frp_dir_path="/tmp/frp"
