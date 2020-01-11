@@ -121,6 +121,45 @@ update_frp() {
   echo -e "${Info} 更新完成！"
 }
 
+update_frp_from_local() {
+  check_installed_status_no_exit "frpc"
+  if [[ $has_frpc != "true" ]]; then
+    echo -e "${Error} frpc 没有安装 !"
+  fi
+  check_installed_status_no_exit "frps"
+  if [[ $has_frps != "true" ]]; then
+    echo -e "${Error} frps 没有安装 !"
+  fi
+  if [[ $has_frpc != "true" && $has_frps != "true" ]]; then
+    exit 1
+  fi
+  read -e -p " 请输入本地文件路径（请确保架构正确）:" local_path
+  [[ ! -s "$local_path" ]] && echo -e "${Error} frp 压缩包不存在 !" && exit 1
+  if [[ $has_frpc == "true" ]]; then
+    install_frpc="true"
+    stop_frp "frpc"
+  fi
+  if [[ $has_frps == "true" ]]; then
+    install_frps="true"
+    stop_frp "frps"
+  fi
+  cd "/tmp" || exit
+  tar -zxvf "$local_path" -C "/tmp/frp"
+  [[ ! -e "/tmp/frp" ]] && echo -e "${Error} frp 解压失败 !" && rm -rf "frp" && exit 1
+  frp_dir_path="/tmp/frp"
+  echo -e "${Info} 开始下载/安装 服务脚本..."
+  download_frp_conf
+  echo -e "${Info} 开始安装 主程序..."
+  copy_binary
+  if [[ $has_frpc == "true" ]]; then
+    start_frp "frpc"
+  fi
+  if [[ $has_frps == "true" ]]; then
+    start_frp "frps"
+  fi
+  echo -e "${Info} 更新完成！"
+}
+
 download_frp() {
   cd "/tmp" || exit
   wget -N --no-check-certificate "https://github.com/fatedier/frp/releases/download/v${frp_new_ver}/frp_${frp_new_ver}_linux_${release}.tar.gz"
@@ -334,6 +373,74 @@ install_frp_switch() {
   fi
 }
 
+install_frp_switch_from_local() {
+  echo && echo -e "你要安装什么？
+ ${Green_font_prefix}1.${Font_color_suffix}  仅安装frpc
+ ${Green_font_prefix}2.${Font_color_suffix}  仅安装frps
+ ${Green_font_prefix}3.${Font_color_suffix}  两个都安装" && echo
+  read -e -p "(默认: 取消):" install_type
+  [[ -z "${install_type}" ]] && echo "已取消..." && exit 1
+  if [[ ${install_type} == "1" ]]; then
+    check_installed_status_no_exit "frpc"
+    if [[ ${has_frpc} == "true" ]]; then
+      echo -e "${Error} frpc 已安装" && exit 1
+    fi
+    install_frpc="true"
+    read -e -p " 请输入本地文件路径（请确保架构正确）:" local_path
+    [[ ! -s "$local_path" ]] && echo -e "${Error} frp 压缩包不存在 !" && exit 1
+    cd "/tmp" || exit
+    tar -zxvf "$local_path" -C "/tmp/frp"
+    [[ ! -e "/tmp/frp" ]] && echo -e "${Error} frp 解压失败 !" && rm -rf "frp" && exit 1
+    frp_dir_path="/tmp/frp"
+    echo -e "${Info} 开始下载/安装 服务脚本..."
+    download_frp_conf
+    echo -e "${Info} 开始安装 主程序..."
+    copy_binary
+    echo -e "${Info} frpc 安装成功！"
+  elif [[ ${install_type} == "2" ]]; then
+    check_installed_status_no_exit "frps"
+    if [[ ${has_frps} == "true" ]]; then
+      echo -e "${Error} frps 已安装" && exit 1
+    fi
+    install_frps="true"
+    read -e -p " 请输入本地文件路径（请确保架构正确）:" local_path
+    [[ ! -s "$local_path" ]] && echo -e "${Error} frp 压缩包不存在 !" && exit 1
+    cd "/tmp" || exit
+    tar -zxvf "$local_path" -C "/tmp/frp"
+    [[ ! -e "/tmp/frp" ]] && echo -e "${Error} frp 解压失败 !" && rm -rf "frp" && exit 1
+    frp_dir_path="/tmp/frp"
+    echo -e "${Info} 开始下载/安装 服务脚本..."
+    download_frp_conf
+    echo -e "${Info} 开始安装 主程序..."
+    copy_binary
+    echo -e "${Info} frps 安装成功！"
+  elif [[ ${install_type} == "3" ]]; then
+    check_installed_status_no_exit "frpc"
+    if [[ ${has_frpc} == "true" ]]; then
+      echo -e "${Error} frpc 已安装" && exit 1
+    fi
+    check_installed_status_no_exit "frps"
+    if [[ ${has_frps} == "true" ]]; then
+      echo -e "${Error} frps 已安装" && exit 1
+    fi
+    install_frpc="true"
+    install_frps="true"
+    read -e -p " 请输入本地文件路径（请确保架构正确）:" local_path
+    [[ ! -s "$local_path" ]] && echo -e "${Error} frp 压缩包不存在 !" && exit 1
+    cd "/tmp" || exit
+    tar -zxvf "$local_path" -C "/tmp/frp"
+    [[ ! -e "/tmp/frp" ]] && echo -e "${Error} frp 解压失败 !" && rm -rf "frp" && exit 1
+    frp_dir_path="/tmp/frp"
+    echo -e "${Info} 开始下载/安装 服务脚本..."
+    download_frp_conf
+    echo -e "${Info} 开始安装 主程序..."
+    copy_binary
+    echo -e "${Info} frpc & frps 安装成功！"
+  else
+    echo -e "${Error} 请输入正确的数字(1-3)" && exit 1
+  fi
+}
+
 uninstall_frp_switch() {
   echo && echo -e "你要卸载什么？
  ${Green_font_prefix}1.${Font_color_suffix}  仅卸载frpc
@@ -459,22 +566,24 @@ echo && echo -e " frp 一键安装管理脚本 ${Red_font_prefix}[v${sh_ver}]${F
  ${Green_font_prefix} 0.${Font_color_suffix} 升级脚本
 ————————————
  ${Green_font_prefix} 1.${Font_color_suffix} 安装 frp
- ${Green_font_prefix} 2.${Font_color_suffix} 更新 frp
- ${Green_font_prefix} 3.${Font_color_suffix} 卸载 frp
+ ${Green_font_prefix} 2.${Font_color_suffix} 从本地文件中安装 frp
+ ${Green_font_prefix} 3.${Font_color_suffix} 更新 frp
+ ${Green_font_prefix} 4.${Font_color_suffix} 从本地文件中更新 frp
+ ${Green_font_prefix} 5.${Font_color_suffix} 卸载 frp
 ————————————
- ${Green_font_prefix} 4.${Font_color_suffix} 启动 frp
- ${Green_font_prefix} 5.${Font_color_suffix} 停止 frp
- ${Green_font_prefix} 6.${Font_color_suffix} 重启 frp
+ ${Green_font_prefix} 6.${Font_color_suffix} 启动 frp
+ ${Green_font_prefix} 7.${Font_color_suffix} 停止 frp
+ ${Green_font_prefix} 8.${Font_color_suffix} 重启 frp
 ————————————
- ${Green_font_prefix} 7.${Font_color_suffix} 修改 配置文件
- ${Green_font_prefix} 8.${Font_color_suffix} 查看 日志信息
+ ${Green_font_prefix} 9.${Font_color_suffix} 修改 配置文件
+ ${Green_font_prefix}10.${Font_color_suffix} 查看 日志信息
 ————————————
- ${Green_font_prefix}10.${Font_color_suffix} 退出脚本
+ ${Green_font_prefix}11.${Font_color_suffix} 退出脚本
 ————————————" && echo
 show_status frpc
 show_status frps
 echo
-read -e -p " 请输入数字 [0-10]:" num
+read -e -p " 请输入数字 [0-11]:" num
 case "$num" in
 0)
   update_shell
@@ -483,30 +592,36 @@ case "$num" in
   install_frp_switch
   ;;
 2)
-  update_frp
+  install_frp_switch_from_local
   ;;
 3)
-  uninstall_frp_switch
+  update_frp
   ;;
 4)
-  start_frp_switch
+  update_frp_from_local
   ;;
 5)
-  stop_frp_switch
+  uninstall_frp_switch
   ;;
 6)
-  restart_frp_switch
+  start_frp_switch
   ;;
 7)
-  edit_frp_conf_switch
+  stop_frp_switch
   ;;
 8)
-  view_Log_switch
+  restart_frp_switch
+  ;;
+9)
+  edit_frp_conf_switch
   ;;
 10)
+  view_Log_switch
+  ;;
+11)
   exit 0
   ;;
 *)
-  echo "请输入正确数字 [0-10]"
+  echo "请输入正确数字 [0-11]"
   ;;
 esac
