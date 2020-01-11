@@ -146,7 +146,7 @@ update_frp_from_local() {
   cd "/tmp" || exit
   rm "/tmp/frp"
   mkdir "/tmp/frp"
-  tar -zxvf "$local_path" -C "/tmp/frp"
+  tar -zxvf "$local_path" --strip-components 1 -C "/tmp/frp"
   [[ ! -e "/tmp/frp" ]] && echo -e "${Error} frp 解压失败 !" && rm -rf "frp" && exit 1
   frp_dir_path="/tmp/frp"
   echo -e "${Info} 开始下载/安装 服务脚本..."
@@ -393,7 +393,7 @@ install_frp_switch_from_local() {
     cd "/tmp" || exit
     rm "/tmp/frp"
     mkdir "/tmp/frp"
-    tar -zxvf "$local_path" -C "/tmp/frp"
+    tar -zxvf "$local_path" --strip-components 1 -C "/tmp/frp"
     [[ ! -e "/tmp/frp" ]] && echo -e "${Error} frp 解压失败 !" && rm -rf "frp" && exit 1
     frp_dir_path="/tmp/frp"
     echo -e "${Info} 开始下载/安装 服务脚本..."
@@ -412,7 +412,7 @@ install_frp_switch_from_local() {
     cd "/tmp" || exit
     rm "/tmp/frp"
     mkdir "/tmp/frp"
-    tar -zxvf "$local_path" -C "/tmp/frp"
+    tar -zxvf "$local_path" --strip-components 1 -C "/tmp/frp"
     [[ ! -e "/tmp/frp" ]] && echo -e "${Error} frp 解压失败 !" && rm -rf "frp" && exit 1
     frp_dir_path="/tmp/frp"
     echo -e "${Info} 开始下载/安装 服务脚本..."
@@ -436,7 +436,7 @@ install_frp_switch_from_local() {
     cd "/tmp" || exit
     rm "/tmp/frp"
     mkdir "/tmp/frp"
-    tar -zxvf "$local_path" -C "/tmp/frp"
+    tar -zxvf "$local_path" --strip-components 1 -C "/tmp/frp"
     [[ ! -e "/tmp/frp" ]] && echo -e "${Error} frp 解压失败 !" && rm -rf "frp" && exit 1
     frp_dir_path="/tmp/frp"
     echo -e "${Info} 开始下载/安装 服务脚本..."
