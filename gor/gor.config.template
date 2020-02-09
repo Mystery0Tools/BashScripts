@@ -1,0 +1,14 @@
+# 录制的流量文件存储目录，也是回放的目录
+config_save_dir=archive
+# 录制的流量文件名称格式
+config_file_format=%Y-%m-%d-%H-%M.gor
+# 录制时监听的端口
+config_listen_port=80
+# 录制时分片文件大小
+config_file_size_limit=256m
+# 回放流量时的速度
+config_replay_speed=100%
+# 回放流量时的http输出url
+config_output_http=http://localhost
+# 日志记录文件目录
+config_log=/var/log/gor
