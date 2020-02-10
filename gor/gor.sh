@@ -1,5 +1,5 @@
 #!/bin/bash
-sh_ver='1.0.1'
+sh_ver='1.0.2'
 gor='/usr/local/bin/gor'
 gor_config='/etc/gor/gor.config'
 gor_config_template='gor.config.template'
