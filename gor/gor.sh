@@ -129,6 +129,10 @@ parse_time() {
 }
 
 replay_traffic_while() {
+  file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
+  files=($file_string)
+  length=${#files[*]}
+  index=0
   while [[ $index -lt $length ]]; do
     gor_file=${files[$index]}
     file_name=$(echo "$gor_file" | cut -d_ -f1)
@@ -137,7 +141,15 @@ replay_traffic_while() {
     if [[ "$disable_time_split" == "true" || ($temp_time -ge $start_time && $temp_time -le $end_time) ]]; then
       echo -e '================================================'
       echo -e "${Info} 正在回放 $date 时刻的请求……"
-      "$gor" --input-file "$config_save_dir/$gor_file|$config_replay_speed" --output-http "$config_output_http" | grep -v 'Version:'
+      "$gor" \
+        --input-file "$config_save_dir/$gor_file|$config_replay_speed" \
+        --output-http "$config_output_http" \
+        --http-allow-method GET \
+        --http-allow-method POST \
+        --http-allow-method PUT \
+        --http-allow-method DELETE \
+        --http-allow-method PATCH \
+        --http-allow-method OPTION
       echo -e "${Info} $date 回放完成。"
     fi
     ((index++))
@@ -157,13 +169,10 @@ replay_traffic() {
       echo "已取消..." && exit 1
     fi
   fi
-  file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
-  files=($file_string)
-  length=${#files[*]}
-  index=0
   disable_time_split=false
   start_time=''
   end_time=''
+  replay_speed=''
   echo -e "格式：yyyy/MM/dd hh:mm:ss"
   echo -e " 请输入回放的开始时间："
   while [[ "$disable_time_split" == "false" && -z "$start_time" ]]; do
@@ -199,14 +208,19 @@ replay_traffic() {
       end_time=''
     fi
   done
-  echo && echo -e " 请输入输出到的http url（url信息将会保存起来）" && echo
-  read -e -p "(默认: $config_output_http):" output_http
-  [[ -z ${output_http} ]] && output_http=$config_output_http
-  if [[ "$output_http" != "$config_output_http" ]]; then
-    do_config 'config_output_http' $output_http
-  fi
+  while [[ -z $replay_speed ]]; do
+    echo && echo -e " 请输入回放流量时的速度(直接输入百分数，仅支持百分数)" && echo
+    read -e -p "(默认:$config_replay_speed):" replay_speed
+    [[ -z "${replay_speed}" ]] && replay_speed=$config_replay_speed
+    if [[ $replay_speed =~ ^[0-9]+%$ && ${replay_speed%?} -gt 0 ]]; then
+      do_config 'config_replay_speed' "$replay_speed"
+    else
+      echo -e "${Error} 格式不正确！"
+      replay_speed=''
+    fi
+  done
 
-  echo -e "${Info} 当前回放速率【${Green_font_prefix}$config_replay_speed${Font_color_suffix}】"
+  echo -e "${Info} 当前输出的http url【${Green_font_prefix}$config_output_http${Font_color_suffix}】"
   echo -e "${Tip} 如果需要更改，请取消本次操作后通过脚本进行修改"
   echo && echo -e " 确认运行？(Y/n)" && echo
   read -e -p "(默认: 确认):" unyn
@@ -313,8 +327,68 @@ show_traffic_file() {
   config
   echo -e "${Info} 已缓存时间片文件"
   echo -e '================================================'
-  ls "$config_save_dir" -lh | grep -v 'total' | awk '{print $5, $6, $7, $8, $9}'
+  ls -lh "$config_save_dir" | grep -v 'total' | awk '{print $5, $6, $7, $8, $9}'
   echo -e '================================================'
+}
+
+tar_traffic_file() {
+  config
+  disable_time_split=false
+  start_time=''
+  end_time=''
+  echo -e "格式：yyyy/MM/dd hh:mm:ss"
+  echo -e " 请输入回放的开始时间："
+  while [[ "$disable_time_split" == "false" && -z "$start_time" ]]; do
+    read -e -p "(回车：压缩全部)" input_start_time
+    [[ -z ${input_start_time} ]] && disable_time_split=true
+    if [[ "$disable_time_split" == "false" ]]; then
+      if [[ $input_start_time =~ ^[0-9]{4}/[0-9]{2}/[0-9]{2}\ [0-2][0-9]:[0-5][0-9]:[0-5][0-9]$ ]]; then
+        start_time=$(date -d "$input_start_time" +"%s")
+        if [[ $? != 0 ]]; then
+          echo -e "${Error} 格式不正确，请重新输入！"
+          start_time=''
+        fi
+      else
+        echo -e "${Error} 格式不正确，请重新输入！"
+        start_time=''
+      fi
+    fi
+  done
+  if [[ "$disable_time_split" == "false" ]]; then
+    echo -e " 请输入回放的结束时间："
+  fi
+  while [[ "$disable_time_split" == "false" && -z "$end_time" ]]; do
+    read -e -p "(回车：当前时间)" input_end_time
+    [[ -z ${input_end_time} ]] && input_end_time=$(date +"%Y/%m/%d %H:%M:%S")
+    if [[ $input_end_time =~ ^[0-9]{4}/[0-9]{2}/[0-9]{2}\ [0-2][0-9]:[0-5][0-9]:[0-5][0-9]$ ]]; then
+      end_time=$(date -d "$input_end_time" +"%s")
+      if [[ $? != 0 ]]; then
+        echo -e "${Error} 格式不正确，请重新输入！"
+        end_time=''
+      fi
+    else
+      echo -e "${Error} 格式不正确，请重新输入！"
+      end_time=''
+    fi
+  done
+  start_time_file_name=$(echo $start_time | sed 's/\//_/g' | sed 's/:/_/g' | sed 's/ /_/g')
+  end_time_file_name=$(echo $end_time | sed 's/\//_/g' | sed 's/:/_/g' | sed 's/ /_/g')
+  tar_file_name="${start_time_file_name}_${end_time_file_name}.tar.gz"
+  file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
+  files=($file_string)
+  length=${#files[*]}
+  index=0
+  touch "$tar_file_name"
+  while [[ $index -lt $length ]]; do
+    gor_file=${files[$index]}
+    file_name=$(echo "$gor_file" | cut -d_ -f1)
+    date=$(parse_time "$file_name")
+    temp_time=$(date -d "$date" +"%s")
+    if [[ "$disable_time_split" == "true" || ($temp_time -ge $start_time && $temp_time -le $end_time) ]]; then
+      tar -rzvf "$tar_file_name" "$config_save_dir/$gor_file"
+    fi
+    ((index++))
+  done
 }
 
 view_capture_log() {
@@ -351,14 +425,15 @@ echo && echo -e " gor 管理脚本 ${Red_font_prefix}[v${sh_ver}]${Font_color_su
  ${Green_font_prefix} 4.${Font_color_suffix} 修改配置
 ————————————
  ${Green_font_prefix} 5.${Font_color_suffix} 查看 已缓存时间片文件
- ${Green_font_prefix} 6.${Font_color_suffix} 查看 录制日志信息
- ${Green_font_prefix} 7.${Font_color_suffix} 查看 回放日志信息
+ ${Green_font_prefix} 6.${Font_color_suffix} 打包 已缓存时间片文件
+ ${Green_font_prefix} 7.${Font_color_suffix} 查看 录制日志信息
+ ${Green_font_prefix} 8.${Font_color_suffix} 查看 回放日志信息
 ————————————
- ${Green_font_prefix} 8.${Font_color_suffix} 退出脚本
+ ${Green_font_prefix} 9.${Font_color_suffix} 退出脚本
 ————————————" && echo
 show_status
 echo
-read -e -p " 请输入数字 [0-7]:" num
+read -e -p " 请输入数字 [0-9]:" num
 case "$num" in
 0)
   update_shell
@@ -379,12 +454,15 @@ case "$num" in
   show_traffic_file
   ;;
 6)
-  view_capture_log
+  show_traffic_file
   ;;
 7)
-  view_reply_log
+  view_capture_log
   ;;
 8)
+  view_reply_log
+  ;;
+9)
   exit 0
   ;;
 *)
