@@ -53,13 +53,26 @@ check_dir() {
 check_installed_status() {
   if [[ ! -e ${gor} ]]; then
     # 判断当前目录是否存在可执行文件
-    if [[ ! -e 'gor' ]]; then
-      echo -e "${Error} gor 没有安装，请检查 !" && exit 1
-    else
-      # 当前目录存在，拷贝到 /usr/local/bin 去
-      cp -rf 'gor' "$gor"
-      return 0
-    fi
+    case $system in
+    'mac')
+      if [[ ! -e 'gor_mac' ]]; then
+        echo -e "${Error} gor 没有安装，请检查 !" && exit 1
+      else
+        # 当前目录存在，拷贝到 /usr/local/bin 去
+        cp -rf 'gor_mac' "$gor"
+        return 0
+      fi
+      ;;
+    'linux')
+      if [[ ! -e 'gor_x64' ]]; then
+        echo -e "${Error} gor 没有安装，请检查 !" && exit 1
+      else
+        # 当前目录存在，拷贝到 /usr/local/bin 去
+        cp -rf 'gor_x64' "$gor"
+        return 0
+      fi
+      ;;
+    esac
     echo -e "${Error} gor 没有安装，请检查 !" && exit 1
   fi
 }
