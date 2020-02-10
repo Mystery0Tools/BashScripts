@@ -173,8 +173,8 @@ replay_traffic() {
   start_time=''
   end_time=''
   replay_speed=''
-  echo -e "格式：yyyy/MM/dd hh:mm:ss"
-  echo -e " 请输入回放的开始时间："
+  echo && echo -e "格式：yyyy/MM/dd hh:mm:ss"
+  echo -e " 请输入回放的开始时间：" && echo
   while [[ "$disable_time_split" == "false" && -z "$start_time" ]]; do
     read -e -p "(回车：不启用)" input_start_time
     [[ -z ${input_start_time} ]] && disable_time_split=true
@@ -208,8 +208,8 @@ replay_traffic() {
       end_time=''
     fi
   done
+  echo && echo -e " 请输入回放流量时的速度(直接输入百分数，仅支持百分数)" && echo
   while [[ -z $replay_speed ]]; do
-    echo && echo -e " 请输入回放流量时的速度(直接输入百分数，仅支持百分数)" && echo
     read -e -p "(默认:$config_replay_speed):" replay_speed
     [[ -z "${replay_speed}" ]] && replay_speed=$config_replay_speed
     if [[ $replay_speed =~ ^[0-9]+%$ && ${replay_speed%?} -gt 0 ]]; then
@@ -325,7 +325,7 @@ ${Green_font_prefix}5.${Font_color_suffix} 如果你想在本地编辑配置文�
 
 show_traffic_file() {
   config
-  echo -e "${Info} 已缓存时间片文件"
+  echo && echo -e "${Info} 已缓存时间片文件" && echo
   echo -e '================================================'
   ls -lh "$config_save_dir" | grep -v 'total' | awk '{print $5, $6, $7, $8, $9}'
   echo -e '================================================'
@@ -336,8 +336,8 @@ tar_traffic_file() {
   disable_time_split=false
   start_time=''
   end_time=''
-  echo -e "格式：yyyy/MM/dd hh:mm:ss"
-  echo -e " 请输入回放的开始时间："
+  echo && echo -e "格式：yyyy/MM/dd hh:mm:ss"
+  echo -e " 请输入回放的开始时间：" && echo
   while [[ "$disable_time_split" == "false" && -z "$start_time" ]]; do
     read -e -p "(回车：压缩全部)" input_start_time
     [[ -z ${input_start_time} ]] && disable_time_split=true
@@ -454,7 +454,7 @@ case "$num" in
   show_traffic_file
   ;;
 6)
-  show_traffic_file
+  tar_traffic_file
   ;;
 7)
   view_capture_log
