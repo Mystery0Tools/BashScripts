@@ -5,13 +5,36 @@ gor_config='/etc/gor/gor.config'
 gor_config_template='gor.config.template'
 gor_capture_log='capture.log'
 gor_reply_log='reply.log'
-Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Font_color_suffix="\033[0m"
+Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Yellow_font_prefix="\033[33m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Yellow_background_prefix="\033[43;37m" && Font_color_suffix="\033[0m"
 Info="${Green_font_prefix}[信息]${Font_color_suffix}"
 Error="${Red_font_prefix}[错误]${Font_color_suffix}"
-Tip="${Green_font_prefix}[注意]${Font_color_suffix}"
+Tip="${Yellow_font_prefix}[注意]${Font_color_suffix}"
 
 check_root() {
   [[ $EUID != 0 ]] && echo -e "${Error} 当前非ROOT账号(或没有ROOT权限)，无法继续操作，请更换ROOT账号或使用 ${Green_background_prefix}sudo su${Font_color_suffix} 命令获取临时ROOT权限（执行后可能会提示输入当前账号的密码）。" && exit 1
+}
+
+check_system() {
+  if [[ "$(uname)" == "Darwin" ]]; then
+    system='mac'
+    # Mac OS X 操作系统
+    echo -e "${Info} 检测到 Mac OS X 操作系统"
+    echo -e "${Error} 因为能力原因，Mac 上暂时无法使用回放流量功能"
+  elif [[ "$(expr substr $(uname -s) 1 5)" == "Linux" ]]; then
+    system='linux'
+    # GNU/Linux操作系统
+    echo -e "${Info} 检测到 GNU/Linux操作系统"
+  elif [[ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" ]]; then
+    system='windows'
+    # Windows NT操作系统
+    echo -e "${Info} 检测到 Windows NT操作系统"
+    echo -e "${Error} 该脚本暂时无法在 Windows 上使用"
+    if [[ $1 == "force_enable_on_windows" ]]; then
+      echo -e "${Tip} 已启用强制运行模式，可能再执行某些操作时出现问题"
+    else
+      exit 1
+    fi
+  fi
 }
 
 check_dir() {
@@ -413,6 +436,7 @@ update_shell() {
 }
 
 check_root
+check_system $1
 check_dir
 check_installed_status
 
