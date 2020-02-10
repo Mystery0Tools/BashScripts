@@ -135,7 +135,11 @@ capture_traffic() {
   if [[ "$listen_port" != "$config_listen_port" ]]; then
     do_config 'config_listen_port' $listen_port
   fi
-  "$gor" --input-raw :"$listen_port" --output-file="$config_save_dir/$config_file_format" --output-file-queue-limit 0 --output-file-size-limit "$config_file_size_limit" >"$config_log/$gor_capture_log" &
+  "$gor" \
+    --input-raw :"$listen_port" \
+    --output-file="$config_save_dir/$config_file_format" \
+    --output-file-queue-limit 0 \
+    --output-file-size-limit "$config_file_size_limit" >"$config_log/$gor_capture_log" 2>&1 &
   echo -e "${Info} gor 启动成功！"
 }
 
@@ -165,31 +169,32 @@ parse_time() {
 }
 
 replay_traffic_while() {
+  log_file=$1
   file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
   files=($file_string)
   length=${#files[*]}
   index=0
+  tmp_dir='temp_dir_do_not_delete'
+  mkdir "$tmp_dir"
   while [[ $index -lt $length ]]; do
     gor_file=${files[$index]}
     file_name=$(echo "$gor_file" | cut -d_ -f1)
     date=$(parse_time "$file_name")
     temp_time=$(date -d "$date" +"%s")
     if [[ "$disable_time_split" == "true" || ($temp_time -ge $start_time && $temp_time -le $end_time) ]]; then
-      echo -e '================================================'
-      echo -e "${Info} 正在回放 $date 时刻的请求……"
-      "$gor" \
-        --input-file "$config_save_dir/$gor_file|$config_replay_speed" \
+      cp "$config_save_dir/$gor_file" "$tmp_dir"
+    fi
+    ((index++))
+  done
+  "$gor" \
+        --input-file "$tmp_dir/*|$config_replay_speed" \
         --output-http "$config_output_http" \
         --http-allow-method GET \
         --http-allow-method POST \
         --http-allow-method PUT \
         --http-allow-method DELETE \
         --http-allow-method PATCH \
-        --http-allow-method OPTION
-      echo -e "${Info} $date 回放完成。"
-    fi
-    ((index++))
-  done
+        --http-allow-method OPTION && rm -rf $tmp_dir > "$log_file" 2>&1 &
 }
 
 replay_traffic() {
@@ -264,7 +269,7 @@ replay_traffic() {
   if [[ ${unyn} != [Yy] ]]; then
     echo "已取消..." && exit 1
   fi
-  replay_traffic_while >"$config_log/$gor_reply_log" &
+  replay_traffic_while "$config_log/$gor_reply_log"
   echo -e "${Info} gor 启动成功！"
 }
 
