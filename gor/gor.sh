@@ -371,9 +371,9 @@ tar_traffic_file() {
       end_time=''
     fi
   done
-  start_time_file_name=$(echo $start_time | sed 's/\//_/g' | sed 's/:/_/g' | sed 's/ /_/g')
-  end_time_file_name=$(echo $end_time | sed 's/\//_/g' | sed 's/:/_/g' | sed 's/ /_/g')
-  tar_file_name="${start_time_file_name}_${end_time_file_name}.tar.gz"
+  start_time_file_name=$(echo $input_start_time | sed 's/\//_/g' | sed 's/:/_/g' | sed 's/ /_/g')
+  end_time_file_name=$(echo $input_end_time | sed 's/\//_/g' | sed 's/:/_/g' | sed 's/ /_/g')
+  tar_file_name="${start_time_file_name}_${end_time_file_name}.tar"
   file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
   files=($file_string)
   length=${#files[*]}
@@ -385,10 +385,12 @@ tar_traffic_file() {
     date=$(parse_time "$file_name")
     temp_time=$(date -d "$date" +"%s")
     if [[ "$disable_time_split" == "true" || ($temp_time -ge $start_time && $temp_time -le $end_time) ]]; then
-      tar -rzvf "$tar_file_name" "$config_save_dir/$gor_file"
+      tar -rvf "$tar_file_name" "$config_save_dir/$gor_file"
     fi
     ((index++))
   done
+  gzip "$tar_file_name"
+  echo -e "${Info} 打包完成！"
 }
 
 view_capture_log() {
