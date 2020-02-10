@@ -186,15 +186,14 @@ replay_traffic_while() {
     fi
     ((index++))
   done
-  "$gor" \
+  ("$gor" \
         --input-file "$tmp_dir/*|$config_replay_speed" \
         --output-http "$config_output_http" \
         --http-allow-method GET \
         --http-allow-method POST \
         --http-allow-method PUT \
         --http-allow-method DELETE \
-        --http-allow-method PATCH \
-        --http-allow-method OPTION && rm -rf $tmp_dir > "$log_file" 2>&1 &
+        --http-allow-method PATCH  && rm -rf $tmp_dir) > "$log_file" 2>&1 &
 }
 
 replay_traffic() {
