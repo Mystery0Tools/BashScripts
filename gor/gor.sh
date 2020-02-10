@@ -38,15 +38,15 @@ check_system() {
 }
 
 check_dir() {
-  if [[ ! -e "$gor_config" ]]; then
-    [[ ! -e ${gor_config_template} ]] && echo -e "${Error} 配置模板文件不存在，请检查 !" && exit 1
-    cp "$gor_config_template" "$gor_config"
-  fi
   if [[ ! -e '/var/log/gor' ]]; then
     mkdir '/var/log/gor'
   fi
   if [[ ! -e '/etc/gor' ]]; then
     mkdir '/etc/gor'
+  fi
+  if [[ ! -e "$gor_config" ]]; then
+    [[ ! -e ${gor_config_template} ]] && echo -e "${Error} 配置模板文件不存在，请检查 !" && exit 1
+    cp "$gor_config_template" "$gor_config"
   fi
 }
 
