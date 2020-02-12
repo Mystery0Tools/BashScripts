@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 sh_ver="1.0.3"
 base_url='https://raw.githubusercontent.com/Mystery0Tools/BashScripts/master/gor'
+base_gor_url='https://github.com/buger/goreplay/releases'
+gor_mac_url="$base_gor_url/download/v1.0.0/gor_1.0.0_mac.tar.gz"
+gor_x64_url="$base_gor_url/download/v1.0.0/gor_1.0.0_x64.tar.gz"
 update_url="$base_url/gor.sh"
 config_url="$base_url/gor.config.template"
 gor='/usr/local/bin/gor'
@@ -56,6 +59,7 @@ check_dir() {
     fi
     [[ ! -e ${gor_config_template} ]] && echo -e "${Error} 配置模板文件不存在，请检查 !" && exit 1
     cp "$gor_config_template" "$gor_config"
+    rm -rf "$gor_config_template"
   fi
 }
 
@@ -65,19 +69,27 @@ check_installed_status() {
     case $system in
     'mac')
       if [[ ! -e 'gor_mac' ]]; then
+        curl -# -o 'gor_mac.tar.gz' "$gor_mac_url" && tar zxvf 'gor_mac.tar.gz' && mv gor gor_mac
+      fi
+      if [[ ! -e 'gor_mac' ]]; then
         echo -e "${Error} gor 没有安装，请检查 !" && exit 1
       else
         # 当前目录存在，拷贝到 /usr/local/bin 去
         cp -rf 'gor_mac' "$gor"
+        rm -rf 'gor_mac'
         return 0
       fi
       ;;
     'linux')
       if [[ ! -e 'gor_x64' ]]; then
+        curl -# -o 'gor_x64.tar.gz' "$gor_x64_url" && tar zxvf 'gor_x64.tar.gz' && mv gor gor_x64
+      fi
+      if [[ ! -e 'gor_x64' ]]; then
         echo -e "${Error} gor 没有安装，请检查 !" && exit 1
       else
         # 当前目录存在，拷贝到 /usr/local/bin 去
         cp -rf 'gor_x64' "$gor"
+        rm -rf 'gor_x64'
         return 0
       fi
       ;;
@@ -497,8 +509,13 @@ check_root
 
 if [[ "$1" == "clear" ]]; then
   rm -rf "$gor_config"
-  rm -rf "$gor"
   rm -rf "/var/log/gor"
+  echo -e "${Tip} 要卸载 gor 吗?  (y/N)"
+  read -e -p "(默认: n):" unyn
+  [[ -z ${unyn} ]] && unyn="n"
+  if [[ ${unyn} == [Yy] ]]; then
+    rm -rf "$gor"
+  fi
   echo -e "${Info} 清理完成！"
   exit 0
 fi
