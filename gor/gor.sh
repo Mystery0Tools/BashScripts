@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 sh_ver='1.0.2'
 gor='/usr/local/bin/gor'
 gor_config='/etc/gor/gor.config'
@@ -104,8 +104,8 @@ show_status() {
 }
 
 do_config() {
-  key=$1
-  value=$2
+  key="$1"
+  value="$2"
   sed "s~$key=.*~$key=$value~g" <"$gor_config" >"temp"
   mv "temp" "$gor_config"
   rm -rf "temp"
@@ -282,9 +282,10 @@ edit_config() {
  ${Green_font_prefix}5.${Font_color_suffix}  配置回放流量时的速度【${Green_font_prefix}$config_replay_speed${Font_color_suffix}】
  ${Green_font_prefix}6.${Font_color_suffix}  配置回放流量时的http输出url【${Green_font_prefix}$config_output_http${Font_color_suffix}】
  ${Green_font_prefix}7.${Font_color_suffix}  配置日志记录文件目录【${Green_font_prefix}$config_log${Font_color_suffix}】
- ${Green_font_prefix}8.${Font_color_suffix}  手动编辑配置文件
+ ${Green_font_prefix}8.${Font_color_suffix}  配置中间件执行命令【${Green_font_prefix}$config_middleware${Font_color_suffix}】
+ ${Green_font_prefix}9.${Font_color_suffix}  手动编辑配置文件
  ${Green_font_prefix}0.${Font_color_suffix}  取消" && echo
-  read -e -p " 请输入数字 [0-7]:" edit_type
+  read -e -p " 请输入数字 [0-9]:" edit_type
   case "$edit_type" in
   0)
     exit 0
@@ -344,6 +345,14 @@ edit_config() {
     do_config 'config_log' "$log_path"
     ;;
   8)
+    config_middleware=${config_middleware//\'/}
+    echo && echo -e " 请输入中间件执行命令" && echo
+    read -e -p "(默认:$config_middleware):" middleware
+    [[ -z "${middleware}" ]] && echo "已取消..." && exit 1
+    echo "输入的是：$middleware"
+    do_config 'config_middleware' "'$middleware'"
+    ;;
+  9)
     edit_config_manual
     ;;
   *)
