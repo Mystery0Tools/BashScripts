@@ -14,9 +14,9 @@ Error="${Red_font_prefix}[错误]${Font_color_suffix}"
 Tip="${Yellow_font_prefix}[注意]${Font_color_suffix}"
 
 download_file() {
-  sh_new_ver=$(curl -I -m 10 -o /dev/null -s -w "%{http_code}" "$1")
-  [[ -z ${sh_new_ver} ]] && echo -e "${Error} 无法链接到 Gitlab !" && exit 0
-  wget -N --no-check-certificate "$1"
+  http_code=$(curl -I -m 10 -o /dev/null -s -w "%{http_code}" "$1")
+  [[ $http_code != 200 ]] && echo -e "${Error} 配置文件下载失败！" && exit 1
+  curl -# -o "$2" "$1"
 }
 
 check_root() {
@@ -50,7 +50,10 @@ check_dir() {
     mkdir '/etc/gor'
   fi
   if [[ ! -e "$gor_config" ]]; then
-    [[ ! -e ${gor_config_template} ]] && download_file "$config_url"
+    if [[ ! -e ${gor_config_template} ]]; then
+      echo -e "${Info} 配置文件模板不存在，正在从仓库中下载..."
+      download_file "$config_url" "$gor_config_template"
+    fi
     [[ ! -e ${gor_config_template} ]] && echo -e "${Error} 配置模板文件不存在，请检查 !" && exit 1
     cp "$gor_config_template" "$gor_config"
   fi
@@ -484,9 +487,9 @@ view_reply_log() {
 }
 
 update_shell() {
-  sh_new_ver=$(wget --no-check-certificate -qO- -t1 -T3 "$update_url" | grep 'sh_ver="' | awk -F "=" '{print $NF}' | sed 's/\"//g' | head -1)
+  sh_new_ver=$(curl -s "$update_url" | grep 'sh_ver="' | awk -F "=" '{print $NF}' | sed 's/\"//g' | head -1)
   [[ -z ${sh_new_ver} ]] && echo -e "${Error} 无法链接到 Gitlab !" && exit 0
-  wget -N --no-check-certificate "$update_url" && chmod +x gor.sh
+  curl -# -o 'gor.sh' "$update_url" && chmod +x gor.sh
   echo -e "脚本已更新为最新版本[ ${Red_font_prefix}${sh_new_ver}${Font_color_suffix} ] !(注意：因为更新方式为直接覆盖当前运行的脚本，所以可能下面会提示一些报错，无视即可)" && exit 0
 }
 
