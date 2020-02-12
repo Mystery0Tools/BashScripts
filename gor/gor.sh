@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-sh_ver='1.0.2'
+sh_ver="1.0.3"
+update_url='https://raw.githubusercontent.com/Mystery0Tools/BashScripts/master/gor/gor.sh'
 gor='/usr/local/bin/gor'
 gor_config='/etc/gor/gor.config'
 gor_config_template='gor.config.template'
@@ -135,11 +136,13 @@ capture_traffic() {
   if [[ "$listen_port" != "$config_listen_port" ]]; then
     do_config 'config_listen_port' $listen_port
   fi
-  "$gor" \
-    --input-raw :"$listen_port" \
-    --output-file="$config_save_dir/$config_file_format" \
-    --output-file-queue-limit 0 \
-    --output-file-size-limit "$config_file_size_limit" >"$config_log/$gor_capture_log" 2>&1 &
+  if [[ ${config_enable_middleware} == "true" ]]; then
+    middleware="--middleware '$config_middleware'"
+  else
+    middleware=''
+  fi
+  cmd="$gor --input-raw :$listen_port $middleware --output-file=$config_save_dir/$config_file_format --output-file-queue-limit 0 --output-file-size-limit $config_file_size_limit"
+  (eval "$cmd") >"$config_log/$gor_capture_log" 2>&1 &
   echo -e "${Info} gor 启动成功！"
 }
 
@@ -186,14 +189,13 @@ replay_traffic_while() {
     fi
     ((index++))
   done
-  ("$gor" \
-        --input-file "$tmp_dir/*|$config_replay_speed" \
-        --output-http "$config_output_http" \
-        --http-allow-method GET \
-        --http-allow-method POST \
-        --http-allow-method PUT \
-        --http-allow-method DELETE \
-        --http-allow-method PATCH  && rm -rf $tmp_dir) > "$log_file" 2>&1 &
+  if [[ ${config_enable_middleware} == "true" ]]; then
+    middleware="--middleware '$config_middleware'"
+  else
+    middleware=''
+  fi
+  cmd="$gor --input-file $tmp_dir/*|$config_replay_speed --output-http $config_output_http $middleware --http-allow-method GET --http-allow-method POST --http-allow-method PUT --http-allow-method DELETE --http-allow-method PATCH && rm -rf $tmp_dir"
+  (eval "$cmd") >"$log_file" 2>&1 &
 }
 
 replay_traffic() {
@@ -274,6 +276,11 @@ replay_traffic() {
 
 edit_config() {
   config
+  if [[ ${config_enable_middleware} == "true" ]]; then
+    middleware_status='中间件已启用'
+  else
+    middleware_status='中间件已禁用'
+  fi
   echo && echo -e "您要配置什么？
  ${Green_font_prefix}1.${Font_color_suffix}  配置流量文件存储目录【${Green_font_prefix}$config_save_dir${Font_color_suffix}】
  ${Green_font_prefix}2.${Font_color_suffix}  配置文件名称格式【${Green_font_prefix}$config_file_format${Font_color_suffix}】
@@ -282,7 +289,7 @@ edit_config() {
  ${Green_font_prefix}5.${Font_color_suffix}  配置回放流量时的速度【${Green_font_prefix}$config_replay_speed${Font_color_suffix}】
  ${Green_font_prefix}6.${Font_color_suffix}  配置回放流量时的http输出url【${Green_font_prefix}$config_output_http${Font_color_suffix}】
  ${Green_font_prefix}7.${Font_color_suffix}  配置日志记录文件目录【${Green_font_prefix}$config_log${Font_color_suffix}】
- ${Green_font_prefix}8.${Font_color_suffix}  配置中间件执行命令【${Green_font_prefix}$config_middleware${Font_color_suffix}】
+ ${Green_font_prefix}8.${Font_color_suffix}  配置中间件可执行文件路径【${Green_font_prefix}$config_middleware${Font_color_suffix}】($middleware_status)
  ${Green_font_prefix}9.${Font_color_suffix}  手动编辑配置文件
  ${Green_font_prefix}0.${Font_color_suffix}  取消" && echo
   read -e -p " 请输入数字 [0-9]:" edit_type
@@ -295,19 +302,22 @@ edit_config() {
     read -e -p "(默认:$config_save_dir):" save_dir
     [[ -z "${save_dir}" ]] && echo "已取消..." && exit 1
     do_config 'config_save_dir' "$save_dir"
+    echo -e "${Info} 配置成功！"
     ;;
   2)
     echo && echo -e " 请输入文件名称格式" && echo
     read -e -p "(默认:$config_file_format):" file_format
     [[ -z "${file_format}" ]] && echo "已取消..." && exit 1
-    do_config 'config_save_dir' "$file_format"
+    do_config 'config_file_format' "$file_format"
+    echo -e "${Info} 配置成功！"
     ;;
   3)
     echo && echo -e " 请输入录制时监听的端口 [1-65535]" && echo
     read -e -p "(默认:$config_listen_port):" listen_port
     [[ -z "${listen_port}" ]] && echo "已取消..." && exit 1
     if [[ $listen_port =~ ^[0-9]+$ && $listen_port -gt 0 && $listen_port -lt 25555 ]]; then
-      do_config 'config_save_dir' "$listen_port"
+      do_config 'config_listen_port' "$listen_port"
+      echo -e "${Info} 配置成功！"
     else
       echo -e "${Error} 格式不正确！"
     fi
@@ -318,6 +328,7 @@ edit_config() {
     [[ -z "${file_size}" ]] && echo "已取消..." && exit 1
     if [[ $file_size =~ ^[0-9]+m$ && ${file_size%?} -gt 0 ]]; then
       do_config 'config_file_size_limit' "$file_size"
+      echo -e "${Info} 配置成功！"
     else
       echo -e "${Error} 格式不正确！"
     fi
@@ -328,6 +339,7 @@ edit_config() {
     [[ -z "${replay_speed}" ]] && echo "已取消..." && exit 1
     if [[ $replay_speed =~ ^[0-9]+%$ && ${replay_speed%?} -gt 0 ]]; then
       do_config 'config_replay_speed' "$replay_speed"
+      echo -e "${Info} 配置成功！"
     else
       echo -e "${Error} 格式不正确！"
     fi
@@ -337,26 +349,38 @@ edit_config() {
     read -e -p "(默认:$config_output_http):" output_http
     [[ -z "${output_http}" ]] && echo "已取消..." && exit 1
     do_config 'config_output_http' "$output_http"
+    echo -e "${Info} 配置成功！"
     ;;
   7)
     echo && echo -e " 请输入日志记录文件目录" && echo
     read -e -p "(默认:$config_log):" log_path
     [[ -z "${log_path}" ]] && echo "已取消..." && exit 1
     do_config 'config_log' "$log_path"
+    echo -e "${Info} 配置成功！"
     ;;
   8)
     config_middleware=${config_middleware//\'/}
-    echo && echo -e " 请输入中间件执行命令" && echo
+    echo && echo -e " 请输入中间件可执行文件路径" && echo
     read -e -p "(默认:$config_middleware):" middleware
     [[ -z "${middleware}" ]] && echo "已取消..." && exit 1
-    echo "输入的是：$middleware"
+    [[ ! -e "${middleware}" ]] && echo -e "${Error} 可执行文件不存在，请检查输入..." && exit 1
     do_config 'config_middleware' "'$middleware'"
+    echo && echo -e " 是否启用该中间件？(Y/n)" && echo
+    read -e -p "(默认: 确认):" unyn
+    [[ -z ${unyn} ]] && unyn="y"
+    if [[ ${unyn} == [Yy] ]]; then
+      do_config 'config_enable_middleware' 'true'
+      echo -e "${Info} 中间件已启用！"
+    else
+      do_config 'config_enable_middleware' 'false'
+      echo -e "${Info} 中间件已禁用！"
+    fi
     ;;
   9)
     edit_config_manual
     ;;
   *)
-    echo "请输入正确数字 [0-7]"
+    echo "请输入正确数字 [0-9]"
     ;;
   esac
 }
@@ -420,8 +444,8 @@ tar_traffic_file() {
       end_time=''
     fi
   done
-  start_time_file_name=$(echo $input_start_time | sed 's/\//_/g' | sed 's/:/_/g' | sed 's/ /_/g')
-  end_time_file_name=$(echo $input_end_time | sed 's/\//_/g' | sed 's/:/_/g' | sed 's/ /_/g')
+  start_time_file_name=$(echo "$input_start_time" | sed 's/\//_/g' | sed 's/:/_/g' | sed 's/ /_/g')
+  end_time_file_name=$(echo "$input_end_time" | sed 's/\//_/g' | sed 's/:/_/g' | sed 's/ /_/g')
   tar_file_name="${start_time_file_name}_${end_time_file_name}.tar"
   file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
   files=($file_string)
@@ -455,10 +479,10 @@ view_reply_log() {
 }
 
 update_shell() {
-  sh_new_ver=$(wget --no-check-certificate -qO- -t1 -T3 "https://raw.githubusercontent.com/Mystery0Tools/BashScripts/master/gor/gor.sh" | grep 'sh_ver="' | awk -F "=" '{print $NF}' | sed 's/\"//g' | head -1)
-  [[ -z ${sh_new_ver} ]] && echo -e "${Error} 无法链接到 Github !" && exit 0
-  wget -N --no-check-certificate "https://raw.githubusercontent.com/Mystery0Tools/BashScripts/master/gor/gor.sh" && chmod +x gor.sh
-  echo -e "脚本已更新为最新版本[ ${sh_new_ver} ] !(注意：因为更新方式为直接覆盖当前运行的脚本，所以可能下面会提示一些报错，无视即可)" && exit 0
+  sh_new_ver=$(wget --no-check-certificate -qO- -t1 -T3 "$update_url" | grep 'sh_ver="' | awk -F "=" '{print $NF}' | sed 's/\"//g' | head -1)
+  [[ -z ${sh_new_ver} ]] && echo -e "${Error} 无法链接到 Gitlab !" && exit 0
+  wget -N --no-check-certificate "$update_url" && chmod +x gor.sh
+  echo -e "脚本已更新为最新版本[ ${Red_font_prefix}${sh_new_ver}${Font_color_suffix} ] !(注意：因为更新方式为直接覆盖当前运行的脚本，所以可能下面会提示一些报错，无视即可)" && exit 0
 }
 
 check_root

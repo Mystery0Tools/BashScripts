@@ -12,5 +12,7 @@ config_replay_speed=100%
 config_output_http=http://localhost
 # 日志记录文件目录
 config_log=/var/log/gor
-# 中间件执行命令
-config_middleware=
+# 中间件可执行文件路径，单引号不能删除
+config_middleware=middleware.sh
+# 是否启用中间件
+config_enable_middleware=false
