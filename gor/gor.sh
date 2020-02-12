@@ -69,7 +69,7 @@ check_installed_status() {
     case $system in
     'mac')
       if [[ ! -e 'gor_mac' ]]; then
-        echo -e "${Error} gor 没有安装，尝试下载，如果长时间卡在这里，请手动下载!"
+        echo -e "${Tip} gor 没有安装，尝试下载，如果长时间卡在这里，请手动下载!"
         curl -# -o 'gor_mac.tar.gz' "$gor_mac_url" && tar zxvf 'gor_mac.tar.gz' && mv gor gor_mac
       fi
       if [[ ! -e 'gor_mac' ]]; then
@@ -83,7 +83,7 @@ check_installed_status() {
       ;;
     'linux')
       if [[ ! -e 'gor_x64' ]]; then
-        echo -e "${Error} gor 没有安装，尝试下载，如果长时间卡在这里，请手动下载!"
+        echo -e "${Tip} gor 没有安装，尝试下载，如果长时间卡在这里，请手动下载!"
         curl -# -o 'gor_x64.tar.gz' "$gor_x64_url" && tar zxvf 'gor_x64.tar.gz' && mv gor gor_x64
       fi
       if [[ ! -e 'gor_x64' ]]; then
