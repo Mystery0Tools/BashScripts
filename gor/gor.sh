@@ -69,10 +69,11 @@ check_installed_status() {
     case $system in
     'mac')
       if [[ ! -e 'gor_mac' ]]; then
+        echo -e "${Error} gor 没有安装，尝试下载，如果长时间卡在这里，请手动下载!"
         curl -# -o 'gor_mac.tar.gz' "$gor_mac_url" && tar zxvf 'gor_mac.tar.gz' && mv gor gor_mac
       fi
       if [[ ! -e 'gor_mac' ]]; then
-        echo -e "${Error} gor 没有安装，请检查 !" && exit 1
+        echo -e "${Error} gor 下载失败，请手动下载 !" && exit 1
       else
         # 当前目录存在，拷贝到 /usr/local/bin 去
         cp -rf 'gor_mac' "$gor"
@@ -82,10 +83,11 @@ check_installed_status() {
       ;;
     'linux')
       if [[ ! -e 'gor_x64' ]]; then
+        echo -e "${Error} gor 没有安装，尝试下载，如果长时间卡在这里，请手动下载!"
         curl -# -o 'gor_x64.tar.gz' "$gor_x64_url" && tar zxvf 'gor_x64.tar.gz' && mv gor gor_x64
       fi
       if [[ ! -e 'gor_x64' ]]; then
-        echo -e "${Error} gor 没有安装，请检查 !" && exit 1
+        echo -e "${Error} gor 下载失败，请手动下载 !" && exit 1
       else
         # 当前目录存在，拷贝到 /usr/local/bin 去
         cp -rf 'gor_x64' "$gor"
