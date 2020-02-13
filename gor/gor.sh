@@ -179,7 +179,12 @@ stop_capture_traffic() {
   check_installed_status
   check_pid
   [[ -z ${PID} ]] && echo -e "${Error} gor 没有运行，请检查 !" && exit 1
-  kill -9 "${PID}"
+  if [[ $config_force_kill_gor == "true" ]]; then
+    kill -9 "$PID"
+  else
+    kill "$PID"
+        echo -e "${Info} gor 已经标记退出，可能需要一段时间才能完全退出..."
+  fi
   echo -e "${Info} gor 停止成功！"
 }
 
@@ -222,7 +227,7 @@ replay_traffic_while() {
   else
     middleware=''
   fi
-  cmd="$gor --input-file $tmp_dir/*|$config_replay_speed --output-http $config_output_http $middleware --http-allow-method GET --http-allow-method POST --http-allow-method PUT --http-allow-method DELETE --http-allow-method PATCH && rm -rf $tmp_dir"
+  cmd="$gor --input-file '$tmp_dir/*|$config_replay_speed' --output-http $config_output_http $middleware --http-allow-method GET --http-allow-method POST --http-allow-method PUT --http-allow-method DELETE --http-allow-method PATCH && rm -rf $tmp_dir"
   (eval "$cmd") >"$log_file" 2>&1 &
 }
 
@@ -587,4 +592,3 @@ case "$num" in
   echo "请输入正确数字 [0-7]"
   ;;
 esac
-

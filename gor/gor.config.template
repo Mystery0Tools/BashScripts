@@ -16,3 +16,5 @@ config_log=/var/log/gor
 config_middleware=middleware.sh
 # 是否启用中间件
 config_enable_middleware=false
+# 退出 gor 时使用强制退出
+config_force_kill_gor=true
