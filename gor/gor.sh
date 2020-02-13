@@ -164,12 +164,7 @@ capture_traffic() {
   if [[ "$listen_port" != "$config_listen_port" ]]; then
     do_config 'config_listen_port' $listen_port
   fi
-  if [[ ${config_enable_middleware} == "true" ]]; then
-    middleware="--middleware '$config_middleware'"
-  else
-    middleware=''
-  fi
-  cmd="$gor --input-raw :$listen_port $middleware --output-file=$config_save_dir/$config_file_format --output-file-queue-limit 0 --output-file-size-limit $config_file_size_limit"
+  cmd="$gor --input-raw :$listen_port --output-file=$config_save_dir/$config_file_format --output-file-queue-limit 0 --output-file-size-limit $config_file_size_limit"
   (eval "$cmd") >"$config_log/$gor_capture_log" 2>&1 &
   echo -e "${Info} gor 启动成功！"
 }
@@ -179,7 +174,7 @@ stop_capture_traffic() {
   check_installed_status
   check_pid
   [[ -z ${PID} ]] && echo -e "${Error} gor 没有运行，请检查 !" && exit 1
-  if [[ $config_force_kill_gor == "true" ]]; then
+  if [[ "$config_force_kill_gor" == "true" ]]; then
     kill -9 "$PID"
   else
     kill "$PID"
@@ -211,6 +206,7 @@ replay_traffic_while() {
   length=${#files[*]}
   index=0
   tmp_dir='temp_dir_do_not_delete'
+  rm -rf "$tmp_dir"
   mkdir "$tmp_dir"
   while [[ $index -lt $length ]]; do
     gor_file=${files[$index]}
@@ -589,6 +585,6 @@ case "$num" in
   exit 0
   ;;
 *)
-  echo "请输入正确数字 [0-7]"
+  echo "请输入正确数字 [0-9]"
   ;;
 esac
