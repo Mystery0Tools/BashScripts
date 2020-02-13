@@ -70,7 +70,9 @@ check_installed_status() {
     'mac')
       if [[ ! -e 'gor_mac' ]]; then
         echo -e "${Tip} gor 没有安装，尝试下载，如果长时间卡在这里，请手动下载!"
-        curl -# -o 'gor_mac.tar.gz' "$gor_mac_url" && tar zxvf 'gor_mac.tar.gz' && mv gor gor_mac
+        curl -# -o 'gor_mac.tar.gz' "$gor_mac_url" && tar zxf 'gor_mac.tar.gz' && mv gor gor_mac
+        echo -e "${Info} gor 下载成功!"
+        echo -e "${Info} 正在安装 gor !"
       fi
       if [[ ! -e 'gor_mac' ]]; then
         echo -e "${Error} gor 下载失败，请手动下载 !" && exit 1
@@ -78,13 +80,16 @@ check_installed_status() {
         # 当前目录存在，拷贝到 /usr/local/bin 去
         cp -rf 'gor_mac' "$gor"
         rm -rf 'gor_mac'
+        echo -e "${Info} gor 安装成功!"
         return 0
       fi
       ;;
     'linux')
       if [[ ! -e 'gor_x64' ]]; then
         echo -e "${Tip} gor 没有安装，尝试下载，如果长时间卡在这里，请手动下载!"
-        curl -# -o 'gor_x64.tar.gz' "$gor_x64_url" && tar zxvf 'gor_x64.tar.gz' && mv gor gor_x64
+        curl -# -o 'gor_x64.tar.gz' "$gor_x64_url" && tar zxf 'gor_x64.tar.gz' && mv gor gor_x64
+        echo -e "${Info} gor 下载成功!"
+        echo -e "${Info} 正在安装 gor !"
       fi
       if [[ ! -e 'gor_x64' ]]; then
         echo -e "${Error} gor 下载失败，请手动下载 !" && exit 1
@@ -92,6 +97,7 @@ check_installed_status() {
         # 当前目录存在，拷贝到 /usr/local/bin 去
         cp -rf 'gor_x64' "$gor"
         rm -rf 'gor_x64'
+        echo -e "${Info} gor 安装成功!"
         return 0
       fi
       ;;
@@ -581,3 +587,4 @@ case "$num" in
   echo "请输入正确数字 [0-7]"
   ;;
 esac
+
