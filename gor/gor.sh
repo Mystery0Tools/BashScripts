@@ -463,10 +463,12 @@ ${Green_font_prefix}5.${Font_color_suffix} 如果你想在本地编辑配置文�
 
 show_traffic_file() {
   config
-  echo && echo -e "${Info} 已缓存时间片文件" && echo
-  echo -e '================================================'
-  ls -lh "$config_save_dir" | grep -v 'total' | awk '{print $5, $6, $7, $8, $9}'
-  echo -e '================================================'
+  echo -e "${Tip} 分页查看文件须知：
+${Green_font_prefix}1.${Font_color_suffix} 一会自动分页显示之后，可以通过 ${Green_font_prefix}方向键${Font_color_suffix} 或者 ${Green_font_prefix}回车键${Font_color_suffix} 查看后面的数据。
+${Green_font_prefix}2.${Font_color_suffix} 如果需要搜索有没有指定名称的文件，那么按 ${Green_font_prefix}/键${Font_color_suffix} 后，输入 ${Green_font_prefix}要搜索的文件名称（支持正则表达式）${Font_color_suffix} 后，再按一下 ${Green_font_prefix}回车键${Font_color_suffix} 即可。
+${Green_font_prefix}3.${Font_color_suffix} 如果要退出查看，那么按 ${Green_font_prefix}q键${Font_color_suffix} 即可。" && echo
+  read -e -p "如果已经理解 less 使用方法，请按任意键继续，如要取消请使用 Ctrl+C 。" var
+  ls -lh "$config_save_dir" | grep -v 'total' | awk '{print $5, $6, $7, $8, $9}' | less
 }
 
 tar_traffic_file_while() {
