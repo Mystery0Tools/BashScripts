@@ -162,7 +162,7 @@ capture_traffic() {
   read -e -p "(默认: $config_listen_port):" listen_port
   [[ -z ${listen_port} ]] && listen_port=$config_listen_port
   if [[ "$listen_port" != "$config_listen_port" ]]; then
-    do_config 'config_listen_port' $listen_port
+    do_config 'config_listen_port' "$listen_port"
   fi
   cmd="$gor --input-raw :$listen_port --output-file=$config_save_dir/$config_file_format --output-file-queue-limit 0 --output-file-size-limit $config_file_size_limit"
   (eval "$cmd") >"$config_log/$gor_capture_log" 2>&1 &
@@ -178,9 +178,41 @@ stop_capture_traffic() {
     kill -9 "$PID"
   else
     kill "$PID"
-        echo -e "${Info} gor 已经标记退出，可能需要一段时间才能完全退出..."
+    echo -e "${Info} gor 已经标记退出，可能需要一段时间才能完全退出..."
   fi
   echo -e "${Info} gor 停止成功！"
+}
+
+# 输出进度条, 小棍型
+procing() {
+  trap 'exit 0;' 6
+  while :; do
+    for j in '-' '\\' '|' '/'; do
+      #保存当前光标所在位置
+      tput sc
+      echo -ne "$j"
+      sleep 1
+      #恢复光标到最后保存的位置
+      tput rc
+    done
+  done
+}
+
+# 等待执行完成
+waiting() {
+  local pid="$1"
+  procing &
+  local tmppid="$!"
+  wait "$pid"
+  #恢复光标到最后保存的位置
+  tput rc
+  kill -6 $tmppid >/dev/null 1>&2
+}
+
+do_something_background() {
+  echo -e "$2"
+  eval "$1" &
+  waiting "$!" "$2"
 }
 
 parse_time() {
@@ -199,12 +231,7 @@ parse_time() {
   echo "$year/$month/$day $hour:$minute:$second"
 }
 
-replay_traffic_while() {
-  log_file=$1
-  file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
-  files=($file_string)
-  length=${#files[*]}
-  index=0
+process_copy_file() {
   tmp_dir='temp_dir_do_not_delete'
   rm -rf "$tmp_dir"
   mkdir "$tmp_dir"
@@ -218,6 +245,15 @@ replay_traffic_while() {
     fi
     ((index++))
   done
+}
+
+replay_traffic_while() {
+  log_file=$1
+  file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
+  files=($file_string)
+  length=${#files[*]}
+  index=0
+  do_something_background 'process_copy_file' "正在处理文件..."
   if [[ ${config_enable_middleware} == "true" ]]; then
     middleware="--middleware '$config_middleware'"
   else
@@ -433,6 +469,25 @@ show_traffic_file() {
   echo -e '================================================'
 }
 
+tar_traffic_file_while() {
+  file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
+  files=($file_string)
+  length=${#files[*]}
+  local index=0
+  touch "$tar_file_name"
+  while [[ $index -lt $length ]]; do
+    gor_file=${files[$index]}
+    file_name=$(echo "$gor_file" | cut -d_ -f1)
+    date=$(parse_time "$file_name")
+    temp_time=$(date -d "$date" +"%s")
+    if [[ "$disable_time_split" == "true" || ($temp_time -ge $start_time && $temp_time -le $end_time) ]]; then
+      tar -rf "$tar_file_name" "$config_save_dir/$gor_file"
+    fi
+    ((index++))
+  done
+  gzip "$tar_file_name"
+}
+
 tar_traffic_file() {
   config
   disable_time_split=false
@@ -476,22 +531,7 @@ tar_traffic_file() {
   start_time_file_name=$(echo "$input_start_time" | sed 's/\//_/g' | sed 's/:/_/g' | sed 's/ /_/g')
   end_time_file_name=$(echo "$input_end_time" | sed 's/\//_/g' | sed 's/:/_/g' | sed 's/ /_/g')
   tar_file_name="${start_time_file_name}_${end_time_file_name}.tar"
-  file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
-  files=($file_string)
-  length=${#files[*]}
-  index=0
-  touch "$tar_file_name"
-  while [[ $index -lt $length ]]; do
-    gor_file=${files[$index]}
-    file_name=$(echo "$gor_file" | cut -d_ -f1)
-    date=$(parse_time "$file_name")
-    temp_time=$(date -d "$date" +"%s")
-    if [[ "$disable_time_split" == "true" || ($temp_time -ge $start_time && $temp_time -le $end_time) ]]; then
-      tar -rvf "$tar_file_name" "$config_save_dir/$gor_file"
-    fi
-    ((index++))
-  done
-  gzip "$tar_file_name"
+  do_something_background 'tar_traffic_file_while' "正在处理文件..."
   echo -e "${Info} 打包完成！"
 }
 
