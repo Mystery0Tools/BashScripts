@@ -16,6 +16,32 @@ Info="${Green_font_prefix}[信息]${Font_color_suffix}"
 Error="${Red_font_prefix}[错误]${Font_color_suffix}"
 Tip="${Yellow_font_prefix}[注意]${Font_color_suffix}"
 
+print_progress_bar() {
+  local progress=$1
+  local extra_message=$2
+  local show_str=''
+  local progress_cols=$((${COLUMNS}-17))
+  local max_length=100
+  if [[ $max_length -gt $progress_cols ]]; then
+    max_length=$progress_cols
+  fi
+  local split=100/$max_length
+  local i=0
+  while [[ $i -le $max_length ]]; do
+    split_progress=$i*$split
+    next_progress=$split_progress+$split
+    if [[ $progress -ge $next_progress ]]; then
+      show_str+="="
+    elif [[ $progress -le $split_progress ]]; then
+      break
+    else
+      show_str+="-"
+    fi
+    ((i++))
+  done
+  printf "[%-${max_length}s][%d%%]%s\r" "$show_str" "$progress" "$extra_message"
+}
+
 download_file() {
   http_code=$(curl -I -m 10 -o /dev/null -s -w "%{http_code}" "$1")
   [[ $http_code != 200 ]] && echo -e "${Error} 配置文件下载失败！" && exit 1
@@ -443,17 +469,16 @@ tar_traffic_file_while() {
   file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
   files=($file_string)
   length=${#files[*]}
+  local progress_label=('-' '\' '|' '/')
+  local progress_label_size=${#progress_label[*]}
   local index=0
   touch "$tar_file_name"
   echo -e "${Info} 正在处理文件..."
-  tput sc
   tput civis
-  progress=('-' '\' '|' '/')
   while [[ $index -lt $length ]]; do
-    i=$(( $index % ${#progress[*]} ))
-    j=${progress[$i]}
-    echo -ne "$j    [$(( $index+1 ))/$length] "
-    tput rc
+    current_progress=$(($index * 100 / $length))
+    progress_label_index=$index%$progress_label_size
+    print_progress_bar "$current_progress" "[$(($index + 1))/$length]${progress_label[$progress_label_index]}"
     gor_file=${files[$index]}
     file_name=$(echo "$gor_file" | cut -d_ -f1)
     date=$(parse_time "$file_name")
