@@ -183,38 +183,6 @@ stop_capture_traffic() {
   echo -e "${Info} gor 停止成功！"
 }
 
-# 输出进度条, 小棍型
-procing() {
-  trap 'exit 0;' 6
-  while :; do
-    for j in '-' '\\' '|' '/'; do
-      #保存当前光标所在位置
-      tput sc
-      echo -ne "$j"
-      sleep 1
-      #恢复光标到最后保存的位置
-      tput rc
-    done
-  done
-}
-
-# 等待执行完成
-waiting() {
-  local pid="$1"
-  procing &
-  local tmppid="$!"
-  wait "$pid"
-  #恢复光标到最后保存的位置
-  tput rc
-  kill -6 $tmppid >/dev/null 1>&2
-}
-
-do_something_background() {
-  echo -e "$2"
-  eval "$1" &
-  waiting "$!" "$2"
-}
-
 parse_time() {
   year=$(echo "$1" | cut -d- -f1)
   [[ -z $year || ! "$config_file_format" =~ %Y ]] && year=1900
@@ -465,7 +433,7 @@ show_traffic_file() {
   config
   echo -e "${Tip} 分页查看文件须知：
 ${Green_font_prefix}1.${Font_color_suffix} 一会自动分页显示之后，可以通过 ${Green_font_prefix}方向键${Font_color_suffix} 或者 ${Green_font_prefix}回车键${Font_color_suffix} 查看后面的数据。
-${Green_font_prefix}2.${Font_color_suffix} 如果需要搜索有没有指定名称的文件，那么按 ${Green_font_prefix}/键${Font_color_suffix} 后，输入 ${Green_font_prefix}要搜索的文件名称（支持正则表达式）${Font_color_suffix} 后，再按一下 ${Green_font_prefix}回车键${Font_color_suffix} 即可。
+${Green_font_prefix}2.${Font_color_suffix} 如果需要搜索有没有指定名称的文件，那么按 ${Green_font_prefix}/键${Font_color_suffix} 后，输入 ${Green_font_prefix}要搜索的文件名称${Font_color_suffix} 后，再按一下 ${Green_font_prefix}回车键${Font_color_suffix} 即可。
 ${Green_font_prefix}3.${Font_color_suffix} 如果要退出查看，那么按 ${Green_font_prefix}q键${Font_color_suffix} 即可。" && echo
   read -e -p "如果已经理解 less 使用方法，请按任意键继续，如要取消请使用 Ctrl+C 。" var
   ls -lh "$config_save_dir" | grep -v 'total' | awk '{print $5, $6, $7, $8, $9}' | less
@@ -477,7 +445,15 @@ tar_traffic_file_while() {
   length=${#files[*]}
   local index=0
   touch "$tar_file_name"
+  echo -e "${Info} 正在处理文件..."
+  tput sc
+  tput civis
+  progress=('-' '\' '|' '/')
   while [[ $index -lt $length ]]; do
+    i=$(( $index % ${#progress[*]} ))
+    j=${progress[$i]}
+    echo -ne "$j    [$(( $index+1 ))/$length] "
+    tput rc
     gor_file=${files[$index]}
     file_name=$(echo "$gor_file" | cut -d_ -f1)
     date=$(parse_time "$file_name")
@@ -487,6 +463,8 @@ tar_traffic_file_while() {
     fi
     ((index++))
   done
+  tput cnorm
+  echo -e "${Info} 正在压缩文件..."
   gzip "$tar_file_name"
 }
 
@@ -533,7 +511,10 @@ tar_traffic_file() {
   start_time_file_name=$(echo "$input_start_time" | sed 's/\//_/g' | sed 's/:/_/g' | sed 's/ /_/g')
   end_time_file_name=$(echo "$input_end_time" | sed 's/\//_/g' | sed 's/:/_/g' | sed 's/ /_/g')
   tar_file_name="${start_time_file_name}_${end_time_file_name}.tar"
-  do_something_background 'tar_traffic_file_while' "正在处理文件..."
+  if [[ "$disable_time_split" == "true" ]]; then
+    tar_file_name='all.tar'
+  fi
+  tar_traffic_file_while
   echo -e "${Info} 打包完成！"
 }
 
