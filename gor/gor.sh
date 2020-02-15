@@ -229,7 +229,19 @@ process_copy_file() {
   tmp_dir='temp_dir_do_not_delete'
   rm -rf "$tmp_dir"
   mkdir "$tmp_dir"
+  file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
+  files=($file_string)
+  length=${#files[*]}
+  local progress_label=('-' '\' '|' '/')
+  local progress_label_size=${#progress_label[*]}
+  local index=0
+  touch "$tar_file_name"
+  echo -e "${Info} 正在处理文件..."
+  tput civis
   while [[ $index -lt $length ]]; do
+    current_progress=$(($index * 100 / $length))
+    progress_label_index=$index%$progress_label_size
+    print_progress_bar "$current_progress" "[$(($index + 1))/$length]${progress_label[$progress_label_index]}"
     gor_file=${files[$index]}
     file_name=$(echo "$gor_file" | cut -d_ -f1)
     date=$(parse_time "$file_name")
@@ -239,6 +251,7 @@ process_copy_file() {
     fi
     ((index++))
   done
+  tput cnorm
 }
 
 replay_traffic_while() {
@@ -246,8 +259,7 @@ replay_traffic_while() {
   file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
   files=($file_string)
   length=${#files[*]}
-  index=0
-  do_something_background 'process_copy_file' "正在处理文件..."
+  process_copy_file
   if [[ ${config_enable_middleware} == "true" ]]; then
     middleware="--middleware '$config_middleware'"
   else
