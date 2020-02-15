@@ -11,6 +11,8 @@ gor_config='/etc/gor/gor.config'
 gor_config_template='gor.config.template'
 gor_capture_log='capture.log'
 gor_reply_log='reply.log'
+# 录制的流量文件名称格式
+config_file_format='%Y-%m-%d/%H/%M.gor'
 Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Yellow_font_prefix="\033[33m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Yellow_background_prefix="\033[43;37m" && Font_color_suffix="\033[0m"
 Info="${Green_font_prefix}[信息]${Font_color_suffix}"
 Error="${Red_font_prefix}[错误]${Font_color_suffix}"
@@ -376,10 +378,10 @@ edit_config() {
     echo -e "${Info} 配置成功！"
     ;;
   2)
-    echo && echo -e " 请输入文件名称格式" && echo
-    read -e -p "(默认:$config_file_format):" file_format
-    [[ -z "${file_format}" ]] && echo "已取消..." && exit 1
-    do_config 'config_file_format' "$file_format"
+    echo && echo -e " 回放时打印详细的日志？" && echo
+    read -e -p "(默认:$config_print_reply_info_log):" print_reply_info_log
+    [[ -z "${print_reply_info_log}" ]] && echo "已取消..." && exit 1
+    do_config 'config_print_reply_info_log' "$print_reply_info_log"
     echo -e "${Info} 配置成功！"
     ;;
   3)

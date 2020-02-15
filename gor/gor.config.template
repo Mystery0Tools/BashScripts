@@ -1,7 +1,7 @@
 # 录制的流量文件存储目录，也是回放的目录
 config_save_dir=archive
-# 录制的流量文件名称格式
-config_file_format=%Y-%m-%d-%H-%M.gor
+# 回放时打印详细的日志
+config_print_reply_info_log=false
 # 录制时监听的端口
 config_listen_port=80
 # 录制时分片文件大小
