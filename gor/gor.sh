@@ -354,7 +354,7 @@ edit_config() {
   fi
   echo && echo -e "您要配置什么？
  ${Green_font_prefix}1.${Font_color_suffix}  配置流量文件存储目录【${Green_font_prefix}$config_save_dir${Font_color_suffix}】
- ${Green_font_prefix}2.${Font_color_suffix}  配置文件名称格式【${Green_font_prefix}$config_file_format${Font_color_suffix}】
+ ${Green_font_prefix}2.${Font_color_suffix}  配置回放时是否打印详细日志【${Green_font_prefix}$config_print_reply_info_log${Font_color_suffix}】
  ${Green_font_prefix}3.${Font_color_suffix}  配置录制时监听的端口【${Green_font_prefix}$config_listen_port${Font_color_suffix}】
  ${Green_font_prefix}4.${Font_color_suffix}  配置录制时分片文件大小限制【${Green_font_prefix}$config_file_size_limit${Font_color_suffix}】
  ${Green_font_prefix}5.${Font_color_suffix}  配置回放流量时的速度【${Green_font_prefix}$config_replay_speed${Font_color_suffix}】
@@ -376,10 +376,14 @@ edit_config() {
     echo -e "${Info} 配置成功！"
     ;;
   2)
-    echo && echo -e " 回放时打印详细的日志？" && echo
-    read -e -p "(默认:$config_print_reply_info_log):" print_reply_info_log
-    [[ -z "${print_reply_info_log}" ]] && echo "已取消..." && exit 1
-    do_config 'config_print_reply_info_log' "$print_reply_info_log"
+    echo && echo -e " 回放时打印详细的日志？(y/N)" && echo
+    read -e -p "(默认: n):" unyn
+    [[ -z ${unyn} ]] && unyn="n"
+    if [[ ${unyn} == [Yy] ]]; then
+      do_config 'config_print_reply_info_log' 'true'
+    else
+      do_config 'config_print_reply_info_log' 'false'
+    fi
     echo -e "${Info} 配置成功！"
     ;;
   3)
