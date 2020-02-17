@@ -18,30 +18,34 @@ Info="${Green_font_prefix}[信息]${Font_color_suffix}"
 Error="${Red_font_prefix}[错误]${Font_color_suffix}"
 Tip="${Yellow_font_prefix}[注意]${Font_color_suffix}"
 
-print_progress_bar() {
-  local progress=$1
-  local extra_message=$2
-  local show_str=''
-  local progress_cols=$((${COLUMNS}-17))
-  local max_length=100
-  if [[ $max_length -gt $progress_cols ]]; then
-    max_length=$progress_cols
-  fi
-  local split=100/$max_length
-  local i=0
-  while [[ $i -le $max_length ]]; do
-    split_progress=$i*$split
-    next_progress=$split_progress+$split
-    if [[ $progress -ge $next_progress ]]; then
-      show_str+="="
-    elif [[ $progress -le $split_progress ]]; then
-      break
-    else
-      show_str+="-"
-    fi
-    ((i++))
+# 输出进度条, 小棍型
+procing() {
+  trap 'exit 0;' 6 # 接收耗时操作执行完毕的信号，用来退出循环
+  while :; do # 无限循环
+    for j in '-' '\\' '|' '/'; do
+      tput sc       # 保存当前光标所在位置
+      echo -ne "$j" # 输出这一秒展示的字符
+      sleep 1       # 每一秒钟更新一次
+      tput rc       # 恢复光标到最后保存的位置
+    done
   done
-  printf "[%-${max_length}s][%d%%]%s\r" "$show_str" "$progress" "$extra_message"
+}
+
+# 等待执行完成
+waiting() {
+  local pid="$1"
+  procing &# 后台执行输出小棍子的进程
+  local tmppid="$!"               # 获取小棍子进程的pid，用于后续终止
+  wait "$pid"                     # 等待耗时操作执行完成
+  tput rc                         # 恢复光标到最后保存的位置，替代小棍子
+  kill -6 $tmppid >/dev/null 1>&2 # 终止小棍子进程
+}
+
+# 执行某些耗时操作
+do_something_background() {
+  echo -e "$2" # 打印执行耗时操作之前的信息文本
+  eval "$1" &# 根据第一个参数执行操作
+  waiting "$!" # 等待耗时操作执行
 }
 
 download_file() {
@@ -238,12 +242,7 @@ process_copy_file() {
   local progress_label_size=${#progress_label[*]}
   local index=0
   touch "$tar_file_name"
-  echo -e "${Info} 正在处理文件..."
-  tput civis
   while [[ $index -lt $length ]]; do
-    current_progress=$(($index * 100 / $length))
-    progress_label_index=$index%$progress_label_size
-    print_progress_bar "$current_progress" "[$(($index + 1))/$length]${progress_label[$progress_label_index]}"
     gor_file=${files[$index]}
     file_name=$(echo "$gor_file" | cut -d_ -f1)
     date=$(parse_time "$file_name")
@@ -253,7 +252,6 @@ process_copy_file() {
     fi
     ((index++))
   done
-  tput cnorm
 }
 
 replay_traffic_while() {
@@ -261,7 +259,7 @@ replay_traffic_while() {
   file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
   files=($file_string)
   length=${#files[*]}
-  process_copy_file
+  do_something_background 'process_copy_file' "正在处理文件..."
   if [[ ${config_enable_middleware} == "true" ]]; then
     middleware="--middleware '$config_middleware'"
   else
@@ -487,12 +485,7 @@ tar_traffic_file_while() {
   local progress_label_size=${#progress_label[*]}
   local index=0
   touch "$tar_file_name"
-  echo -e "${Info} 正在处理文件..."
-  tput civis
   while [[ $index -lt $length ]]; do
-    current_progress=$(($index * 100 / $length))
-    progress_label_index=$index%$progress_label_size
-    print_progress_bar "$current_progress" "[$(($index + 1))/$length]${progress_label[$progress_label_index]}"
     gor_file=${files[$index]}
     file_name=$(echo "$gor_file" | cut -d_ -f1)
     date=$(parse_time "$file_name")
@@ -502,8 +495,6 @@ tar_traffic_file_while() {
     fi
     ((index++))
   done
-  tput cnorm
-  echo -e "${Info} 正在压缩文件..."
   gzip "$tar_file_name"
 }
 
@@ -553,7 +544,7 @@ tar_traffic_file() {
   if [[ "$disable_time_split" == "true" ]]; then
     tar_file_name='all.tar'
   fi
-  tar_traffic_file_while
+  do_something_background 'tar_traffic_file_while' "正在处理文件..."
   echo -e "${Info} 打包完成！"
 }
 
