@@ -255,7 +255,6 @@ parse_time() {
   [[ -z $minute || ! "$config_file_format" =~ %M ]] && minute=00
   second=$(echo "$1" | cut -d- -f6)
   [[ -z $second || ! "$config_file_format" =~ %S ]] && second=00
-  echo "$year/$month/$day $hour:$minute:$second"
 }
 
 process_copy_file() {
@@ -270,7 +269,8 @@ process_copy_file() {
   while [[ $index -lt $length ]]; do
     gor_file=${files[$index]}
     file_name=$(echo "$gor_file" | cut -d_ -f1)
-    date=$(parse_time "$file_name")
+    parse_time "$file_name"
+    date="$year/$month/$day $hour:$minute:$second"
     temp_time=$(date -d "$date" +"%s")
     if [[ "$disable_time_split" == "true" || ($temp_time -ge $start_time && $temp_time -le $end_time) ]]; then
       cp "$config_save_dir/$gor_file" "$tmp_dir"
@@ -506,23 +506,87 @@ ${Green_font_prefix}3.${Font_color_suffix} 如果要退出查看，那么按 ${G
   ls -lh "$config_save_dir" | grep -v 'total' | awk '{print $5, $6, $7, $8, $9}' | less
 }
 
-tar_traffic_file_while() {
-  file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
-  files=($file_string)
-  length=${#files[*]}
-  local index=0
-  touch "$tar_file_name"
-  while [[ $index -lt $length ]]; do
-    gor_file=${files[$index]}
-    file_name=$(echo "$gor_file" | cut -d_ -f1)
-    date=$(parse_time "$file_name")
-    temp_time=$(date -d "$date" +"%s")
-    if [[ "$disable_time_split" == "true" || ($temp_time -ge $start_time && $temp_time -le $end_time) ]]; then
-      tar -rf "$tar_file_name" "$config_save_dir/$gor_file"
+tar_traffic_file_while_time_hour() {
+  check_start="$1"
+  time_minute_dir_string=$(ls -rt "$config_save_dir/$date_dir_name/$time_hour_dir_name" | tr "\n" " ")
+  time_minute_dir=()
+  time_minute_dir=($time_minute_dir_string)
+  time_minute_dir_length=${#time_minute_dir[*]}
+  local time_minute_dir_index=0
+  while [[ $time_minute_dir_index -lt $time_minute_dir_length ]]; do
+    time_minute_dir_name=${time_minute_dir[$time_minute_dir_index]}
+    file_name=$(echo "$time_minute_dir_name" | cut -d_ -f1)
+    parse_time "$date_dir_name-$time_hour_dir_name-$file_name"
+    time_minute_dir_date="$year/$month/$day $hour:$minute:00"
+    time_minute_dir_time=$(date -d "$time_minute_dir_date" +"%s")
+    if [[ "$check_start" == "true" ]]; then
+      if [[ $time_minute_dir_time -ge $start_time ]]; then
+        tar -rf "$tar_file_name" "$config_save_dir/$date_dir_name/$time_hour_dir_name/$file_name"*
+      fi
+    else
+      if [[ $time_minute_dir_time -le $end_time ]]; then
+        tar -rf "$tar_file_name" "$config_save_dir/$date_dir_name/$time_hour_dir_name/$file_name"*
+      fi
     fi
-    ((index++))
+    ((time_minute_dir_index++))
+  done
+}
+
+tar_traffic_file_while_time() {
+  time_hour_dir_string=$(ls -rt "$config_save_dir/$date_dir_name" | tr "\n" " ")
+  time_hour_dir=()
+  time_hour_dir=($time_hour_dir_string)
+  time_hour_dir_length=${#time_hour_dir[*]}
+  local time_hour_dir_index=0
+  while [[ $time_hour_dir_index -lt $time_hour_dir_length ]]; do
+    time_hour_dir_name=${time_hour_dir[$time_hour_dir_index]}
+    parse_time "$date_dir_name-$time_hour_dir_name"
+    time_hour_dir_date="$year/$month/$day $hour:00:00"
+    time_hour_dir_date_start=$(date -d "$input_start_time" +"%Y/%m/%d %H:00:00")
+    time_hour_dir_date_end=$(date -d "$input_end_time" +"%Y/%m/%d %H:00:00")
+    time_hour_dir_time=$(date -d "$time_hour_dir_date" +"%s")
+    if [[ "$time_hour_dir_date" == "$time_hour_dir_date_start" || "$time_hour_dir_date" == "$time_hour_dir_date_end" ]]; then
+      # 判断是否是边缘数据
+      if [[ "$time_hour_dir_date" == "$time_hour_dir_date_start" ]]; then
+        tar_traffic_file_while_time_hour 'true'
+      else
+        tar_traffic_file_while_time_hour 'false'
+      fi
+    elif [[ $time_hour_dir_time -gt $start_time && $time_hour_dir_time -lt $end_time ]]; then
+      # 不是边缘数据并且在指定时间段中，直接添加所有文件
+      tar -rf "$tar_file_name" "$config_save_dir/$date_dir_name/$time_hour_dir_name/"*
+    fi
+    ((time_hour_dir_index++))
+  done
+}
+
+tar_traffic_file_while() {
+  date_dir_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
+  date_dir=()
+  date_dir=($date_dir_string)
+  date_dir_length=${#date_dir[*]}
+  local date_dir_index=0
+  while [[ $date_dir_index -lt $date_dir_length ]]; do
+    date_dir_name=${date_dir[$date_dir_index]}
+    parse_time "$date_dir_name"
+    date_dir_date="$year/$month/$day"
+    date_dir_date_start=$(date -d "$input_start_time" +"%Y/%m/%d")
+    date_dir_date_end=$(date -d "$input_end_time" +"%Y/%m/%d")
+    date_dir_time=$(date -d "$date_dir_date" +"%s")
+    if [[ "$date_dir_date" == "$date_dir_date_start" || "$date_dir_date" == "$date_dir_date_end" ]]; then
+      # 判断是否是边缘数据
+      tar_traffic_file_while_time
+    elif [[ $date_dir_time -gt $start_time && $date_dir_time -lt $end_time ]]; then
+      # 不是边缘数据并且在指定时间段中，直接添加所有文件
+      tar -rf "$tar_file_name" "$config_save_dir/$date_dir_name/"*
+    fi
+    ((date_dir_index++))
   done
   gzip "$tar_file_name"
+}
+
+tar_traffic_file_all() {
+  tar czf "$tar_file_name" "$config_save_dir"
 }
 
 tar_traffic_file() {
@@ -569,9 +633,14 @@ tar_traffic_file() {
   end_time_file_name=$(echo "$input_end_time" | sed 's/\//_/g' | sed 's/:/_/g' | sed 's/ /_/g')
   tar_file_name="${start_time_file_name}_${end_time_file_name}.tar"
   if [[ "$disable_time_split" == "true" ]]; then
-    tar_file_name='all.tar'
+    tar_file_name='all.tar.gz'
   fi
-  do_something_background 'tar_traffic_file_while' "正在处理文件..."
+  touch "$tar_file_name"
+  if [[ "$disable_time_split" == "true" ]]; then
+    do_something_background 'tar_traffic_file_all' "${Info} 正在处理文件..."
+  else
+    do_something_background 'tar_traffic_file_while' "${Info} 正在处理文件..."
+  fi
   echo -e "${Info} 打包完成！"
 }
 
@@ -615,7 +684,7 @@ do_convert() {
     gor_file=${files[$index]}
     file_name=$(echo "$gor_file" | cut -d_ -f1)
     file_name_1=$(echo "$gor_file" | cut -d_ -f2)
-    parse_time "$file_name" > '/dev/null' # 解析文件名的日期时间，丢弃输出
+    parse_time "$file_name" # 解析文件名的日期时间，丢弃输出
     true_file_name_date="$temp_convert_dir_do_not_delete/$year-$month-$day"
     true_file_name_date_hour="$true_file_name_date/$hour"
     true_file_name="$true_file_name_date_hour/${minute}_$file_name_1"
