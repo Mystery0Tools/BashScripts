@@ -48,13 +48,20 @@ print_progress_bar() {
 # 输出进度条, 小棍型
 procing() {
   trap 'exit 0;' 6 # 接收耗时操作执行完毕的信号，用来退出循环
+  little_stick=('-' '\' '|' '/')
+  little_stick_size=${#little_stick[*]}
+  ellipsis=('.' '..' '...' '....' '.....' '......')
+  ellipsis_size=${#ellipsis[*]}
+  procing_index=0
   while :; do # 无限循环
-    for j in '-' '\\' '|' '/'; do
-      tput sc       # 保存当前光标所在位置
-      echo -ne "$j" # 输出这一秒展示的字符
-      sleep 1       # 每一秒钟更新一次
-      tput rc       # 恢复光标到最后保存的位置
-    done
+    tput sc
+    tput el
+    little_stick_index=$procing_index%$little_stick_size
+    ellipsis_index=$procing_index%$ellipsis_size
+    printf "%s    %-6s    %s" "${little_stick[$little_stick_index]}" "${ellipsis[$ellipsis_index]}" "${little_stick[$little_stick_index]}"
+    sleep 0.5 # 每一秒钟更新一次
+    tput rc
+    ((procing_index++))
   done
 }
 
@@ -70,9 +77,13 @@ waiting() {
 
 # 执行某些耗时操作
 do_something_background() {
-  echo -e "$2" # 打印执行耗时操作之前的信息文本
+  echo -ne "$2  " # 打印执行耗时操作之前的信息文本
+  tput civis
   eval "$1" &# 根据第一个参数执行操作
   waiting "$!" # 等待耗时操作执行
+  tput cnorm
+  tput el
+  echo
 }
 
 download_file() {
@@ -637,9 +648,9 @@ tar_traffic_file() {
   fi
   touch "$tar_file_name"
   if [[ "$disable_time_split" == "true" ]]; then
-    do_something_background 'tar_traffic_file_all' "${Info} 正在处理文件..."
+    do_something_background 'tar_traffic_file_all' "${Info} 正在处理文件  "
   else
-    do_something_background 'tar_traffic_file_while' "${Info} 正在处理文件..."
+    do_something_background 'tar_traffic_file_while' "${Info} 正在处理文件  "
   fi
   echo -e "${Info} 打包完成！"
 }
