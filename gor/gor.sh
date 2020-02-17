@@ -18,6 +18,33 @@ Info="${Green_font_prefix}[信息]${Font_color_suffix}"
 Error="${Red_font_prefix}[错误]${Font_color_suffix}"
 Tip="${Yellow_font_prefix}[注意]${Font_color_suffix}"
 
+# 输出进度条 横向
+print_progress_bar() {
+  local progress=$1
+  local extra_message=$2
+  local show_str=''
+  local progress_cols=$((${COLUMNS} - 17))
+  local max_length=100
+  if [[ $max_length -gt $progress_cols ]]; then
+    max_length=$progress_cols
+  fi
+  local split=100/$max_length
+  local i=0
+  while [[ $i -le $max_length ]]; do
+    split_progress=$i*$split
+    next_progress=$split_progress+$split
+    if [[ $progress -ge $next_progress ]]; then
+      show_str+="="
+    elif [[ $progress -le $split_progress ]]; then
+      break
+    else
+      show_str+="-"
+    fi
+    ((i++))
+  done
+  printf "[%-${max_length}s][%d%%]%s\r" "$show_str" "$progress" "$extra_message"
+}
+
 # 输出进度条, 小棍型
 procing() {
   trap 'exit 0;' 6 # 接收耗时操作执行完毕的信号，用来退出循环
@@ -238,8 +265,6 @@ process_copy_file() {
   file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
   files=($file_string)
   length=${#files[*]}
-  local progress_label=('-' '\' '|' '/')
-  local progress_label_size=${#progress_label[*]}
   local index=0
   touch "$tar_file_name"
   while [[ $index -lt $length ]]; do
@@ -485,8 +510,6 @@ tar_traffic_file_while() {
   file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
   files=($file_string)
   length=${#files[*]}
-  local progress_label=('-' '\' '|' '/')
-  local progress_label_size=${#progress_label[*]}
   local index=0
   touch "$tar_file_name"
   while [[ $index -lt $length ]]; do
@@ -573,9 +596,45 @@ update_shell() {
 
 check_root
 
-if [[ "$1" == "clear" ]]; then
+do_convert() {
+  config
+  file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
+  files=($file_string)
+  length=${#files[*]}
+  local progress_label=('-' '\' '|' '/')
+  local progress_label_size=${#progress_label[*]}
+  local index=0
+  local temp_convert_dir_do_not_delete='temp_convert_dir_do_not_delete'
+  mkdir "$temp_convert_dir_do_not_delete"
+  echo -e "${Info} 正在处理文件..."
+  tput civis
+  while [[ $index -lt $length ]]; do
+    current_progress=$(($index * 100 / $length))
+    progress_label_index=$index%$progress_label_size
+    print_progress_bar "$current_progress" "[$(($index + 1))/$length]${progress_label[$progress_label_index]}"
+    gor_file=${files[$index]}
+    file_name=$(echo "$gor_file" | cut -d_ -f1)
+    file_name_1=$(echo "$gor_file" | cut -d_ -f2)
+    parse_time "$file_name" > '/dev/null' # 解析文件名的日期时间，丢弃输出
+    true_file_name_date="$temp_convert_dir_do_not_delete/$year-$month-$day"
+    true_file_name_date_hour="$true_file_name_date/$hour"
+    true_file_name="$true_file_name_date_hour/${minute}_$file_name_1"
+    [[ ! -e "$true_file_name_date" ]] && mkdir "$true_file_name_date"
+    [[ ! -e "$true_file_name_date_hour" ]] && mkdir "$true_file_name_date_hour"
+    mv "$config_save_dir/$gor_file" "$true_file_name"
+    ((index++))
+  done
+  tput cnorm
+  rm -rf "$config_save_dir"
+  mv "$temp_convert_dir_do_not_delete" "$config_save_dir"
+  echo -e "${Info} 文件处理完成！"
+}
+
+case "$1" in
+'clear')
   rm -rf "$gor_config"
-  rm -rf "/var/log/gor"
+  rm -rf '/etc/gor'
+  rm -rf '/var/log/gor'
   echo -e "${Tip} 要卸载 gor 吗?  (y/N)"
   read -e -p "(默认: n):" unyn
   [[ -z ${unyn} ]] && unyn="n"
@@ -584,7 +643,17 @@ if [[ "$1" == "clear" ]]; then
   fi
   echo -e "${Info} 清理完成！"
   exit 0
-fi
+  ;;
+'convert')
+  echo -e "${Tip} 要执行录制文件转换操作吗？重复执行转换可能会出现异常  (y/N)"
+  read -e -p "(默认: n):" unyn
+  [[ -z ${unyn} ]] && unyn="n"
+  if [[ ${unyn} == [Yy] ]]; then
+    do_convert
+  fi
+  exit 0
+  ;;
+esac
 
 check_system
 check_dir
