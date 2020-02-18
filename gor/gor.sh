@@ -272,22 +272,18 @@ process_copy_file() {
   tmp_dir='temp_dir_do_not_delete'
   rm -rf "$tmp_dir"
   mkdir "$tmp_dir"
-  file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
-  files=($file_string)
-  length=${#files[*]}
-  local index=0
+  tar_file_name="tmp.tar"
+  if [[ "$disable_time_split" == "true" ]]; then
+    tar_file_name='tmp.tar.gz'
+  fi
   touch "$tar_file_name"
-  while [[ $index -lt $length ]]; do
-    gor_file=${files[$index]}
-    file_name=$(echo "$gor_file" | cut -d_ -f1)
-    parse_time "$file_name"
-    date="$year/$month/$day $hour:$minute:$second"
-    temp_time=$(date -d "$date" +"%s")
-    if [[ "$disable_time_split" == "true" || ($temp_time -ge $start_time && $temp_time -le $end_time) ]]; then
-      cp "$config_save_dir/$gor_file" "$tmp_dir"
-    fi
-    ((index++))
-  done
+  if [[ "$disable_time_split" == "true" ]]; then
+    do_something_background 'tar_traffic_file_all' "${Info} 正在处理文件  "
+  else
+    do_something_background 'tar_traffic_file_while' "${Info} 正在处理文件  "
+  fi
+  tar -zxf 'tmp.tar.gz' --strip-components 1 -C "$tmp_dir/"
+  rm -rf 'tmp.tar.gz'
 }
 
 replay_traffic_while() {
@@ -295,13 +291,13 @@ replay_traffic_while() {
   file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
   files=($file_string)
   length=${#files[*]}
-  do_something_background 'process_copy_file' "正在处理文件..."
+  process_copy_file
   if [[ ${config_enable_middleware} == "true" ]]; then
     middleware="--middleware '$config_middleware'"
   else
     middleware=''
   fi
-  cmd="$gor --input-file '$tmp_dir/*|$config_replay_speed' --output-http $config_output_http $middleware --http-allow-method GET --http-allow-method POST --http-allow-method PUT --http-allow-method DELETE --http-allow-method PATCH && rm -rf $tmp_dir"
+  cmd="$gor --input-file '$tmp_dir/*/*/*|$config_replay_speed' --output-http $config_output_http $middleware --http-allow-method GET --http-allow-method POST --http-allow-method PUT --http-allow-method DELETE --http-allow-method PATCH && rm -rf $tmp_dir"
   (eval "$cmd") >"$log_file" 2>&1 &
 }
 
