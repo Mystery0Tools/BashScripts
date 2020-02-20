@@ -237,7 +237,12 @@ capture_traffic() {
   if [[ "$listen_port" != "$config_listen_port" ]]; then
     do_config 'config_listen_port' "$listen_port"
   fi
-  cmd="$gor --input-raw :$listen_port --output-file=$config_save_dir/${config_file_format}_${config_capture_file_suffix}.gor --output-file-queue-limit 0 --output-file-size-limit $config_file_size_limit"
+  if [[ -n "$config_capture_file_suffix" ]]; then
+    filter_regex="$config_save_dir/${config_file_format}_${config_capture_file_suffix}.gor"
+  else
+    filter_regex="$config_save_dir/${config_file_format}.gor"
+  fi
+  cmd="$gor --input-raw :$listen_port --output-file=$filter_regex --output-file-queue-limit 0 --output-file-size-limit $config_file_size_limit"
   (eval "$cmd") >"$config_log/$gor_capture_log" 2>&1 &
   echo -e "${Info} gor 启动成功！"
 }
@@ -326,6 +331,7 @@ replay_traffic() {
   start_time=''
   end_time=''
   replay_speed=''
+  filter_regex=''
   echo && echo -e "格式：yyyy/MM/dd hh:mm:ss"
   echo -e " 请输入回放的开始时间：" && echo
   while [[ "$disable_time_split" == "false" && -z "$start_time" ]]; do
@@ -372,6 +378,10 @@ replay_traffic() {
       replay_speed=''
     fi
   done
+  echo && echo -e " 请输入回放时过滤url请求的正则表达式（为空则跳过指定）" && echo
+  read -e -p "(默认:$config_filter_regex):" filter_regex
+  [[ -z "${filter_regex}" ]] && filter_regex=$config_filter_regex
+  do_config 'config_filter_regex' "$filter_regex"
 
   echo -e "${Info} 当前输出的http url【${Green_font_prefix}$config_output_http${Font_color_suffix}】"
   echo -e "${Tip} 如果需要更改，请取消本次操作后通过脚本进行修改"
