@@ -13,8 +13,12 @@ config_output_http=http://localhost
 # 日志记录文件目录
 config_log=/var/log/gor
 # 中间件可执行文件路径，单引号不能删除
-config_middleware=middleware.sh
+config_middleware='middleware.sh'
 # 是否启用中间件
 config_enable_middleware=false
 # 退出 gor 时使用强制退出
 config_force_kill_gor=true
+# 录制时生成的文件名后缀
+config_capture_file_suffix=
+# 回放时过滤url请求的正则表达式
+config_filter_regex=

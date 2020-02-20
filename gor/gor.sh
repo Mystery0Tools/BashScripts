@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-sh_ver="1.0.3"
+sh_ver="1.0.4"
 base_url='https://raw.githubusercontent.com/Mystery0Tools/BashScripts/master/gor'
 base_gor_url='https://github.com/buger/goreplay/releases'
 gor_mac_url="$base_gor_url/download/v1.0.0/gor_1.0.0_mac.tar.gz"
@@ -12,7 +12,7 @@ gor_config_template='gor.config.template'
 gor_capture_log='capture.log'
 gor_reply_log='reply.log'
 # 录制的流量文件名称格式
-config_file_format='%Y-%m-%d/%H/%M.gor'
+config_file_format='%Y-%m-%d/%H/%M'
 Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Yellow_font_prefix="\033[33m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Yellow_background_prefix="\033[43;37m" && Font_color_suffix="\033[0m"
 Info="${Green_font_prefix}[信息]${Font_color_suffix}"
 Error="${Red_font_prefix}[错误]${Font_color_suffix}"
@@ -203,12 +203,15 @@ show_status() {
 }
 
 do_config() {
+  do_config_no_update "$1" "$2"
+  config
+}
+
+do_config_no_update() {
   key="$1"
   value="$2"
   sed "s~$key=.*~$key=$value~g" <"$gor_config" >"temp"
   mv "temp" "$gor_config"
-  rm -rf "temp"
-  config
 }
 
 capture_traffic() {
@@ -234,7 +237,7 @@ capture_traffic() {
   if [[ "$listen_port" != "$config_listen_port" ]]; then
     do_config 'config_listen_port' "$listen_port"
   fi
-  cmd="$gor --input-raw :$listen_port --output-file=$config_save_dir/$config_file_format --output-file-queue-limit 0 --output-file-size-limit $config_file_size_limit"
+  cmd="$gor --input-raw :$listen_port --output-file=$config_save_dir/${config_file_format}_${config_capture_file_suffix}.gor --output-file-queue-limit 0 --output-file-size-limit $config_file_size_limit"
   (eval "$cmd") >"$config_log/$gor_capture_log" 2>&1 &
   echo -e "${Info} gor 启动成功！"
 }
@@ -297,7 +300,12 @@ replay_traffic_while() {
   else
     middleware=''
   fi
-  cmd="$gor --input-file '$tmp_dir/*/*/*|$config_replay_speed' --output-http $config_output_http $middleware --http-allow-method GET --http-allow-method POST --http-allow-method PUT --http-allow-method DELETE --http-allow-method PATCH && rm -rf $tmp_dir"
+  if [[ -n "$config_filter_regex" ]]; then
+    filter_regex="--http-allow-url $config_filter_regex"
+  else
+    filter_regex=''
+  fi
+  cmd="$gor --input-file '$tmp_dir/*/*/*|$config_replay_speed' --output-http $config_output_http $middleware $filter_regex --http-allow-method GET --http-allow-method POST --http-allow-method PUT --http-allow-method DELETE --http-allow-method PATCH && rm -rf $tmp_dir"
   (eval "$cmd") >"$log_file" 2>&1 &
 }
 
@@ -385,17 +393,20 @@ edit_config() {
     middleware_status='中间件已禁用'
   fi
   echo && echo -e "您要配置什么？
- ${Green_font_prefix}1.${Font_color_suffix}  配置流量文件存储目录【${Green_font_prefix}$config_save_dir${Font_color_suffix}】
- ${Green_font_prefix}2.${Font_color_suffix}  配置回放时是否打印详细日志【${Green_font_prefix}$config_print_reply_info_log${Font_color_suffix}】
- ${Green_font_prefix}3.${Font_color_suffix}  配置录制时监听的端口【${Green_font_prefix}$config_listen_port${Font_color_suffix}】
- ${Green_font_prefix}4.${Font_color_suffix}  配置录制时分片文件大小限制【${Green_font_prefix}$config_file_size_limit${Font_color_suffix}】
- ${Green_font_prefix}5.${Font_color_suffix}  配置回放流量时的速度【${Green_font_prefix}$config_replay_speed${Font_color_suffix}】
- ${Green_font_prefix}6.${Font_color_suffix}  配置回放流量时的http输出url【${Green_font_prefix}$config_output_http${Font_color_suffix}】
- ${Green_font_prefix}7.${Font_color_suffix}  配置日志记录文件目录【${Green_font_prefix}$config_log${Font_color_suffix}】
- ${Green_font_prefix}8.${Font_color_suffix}  配置中间件可执行文件路径【${Green_font_prefix}$config_middleware${Font_color_suffix}】($middleware_status)
- ${Green_font_prefix}9.${Font_color_suffix}  手动编辑配置文件
- ${Green_font_prefix}0.${Font_color_suffix}  取消" && echo
-  read -e -p " 请输入数字 [0-9]:" edit_type
+ ${Green_font_prefix} 1.${Font_color_suffix}  配置流量文件存储目录【${Green_font_prefix}$config_save_dir${Font_color_suffix}】
+ ${Green_font_prefix} 2.${Font_color_suffix}  配置回放时是否打印详细日志【${Green_font_prefix}$config_print_reply_info_log${Font_color_suffix}】
+ ${Green_font_prefix} 3.${Font_color_suffix}  配置录制时监听的端口【${Green_font_prefix}$config_listen_port${Font_color_suffix}】
+ ${Green_font_prefix} 4.${Font_color_suffix}  配置录制时分片文件大小限制【${Green_font_prefix}$config_file_size_limit${Font_color_suffix}】
+ ${Green_font_prefix} 5.${Font_color_suffix}  配置回放流量时的速度【${Green_font_prefix}$config_replay_speed${Font_color_suffix}】
+ ${Green_font_prefix} 6.${Font_color_suffix}  配置回放流量时的http输出url【${Green_font_prefix}$config_output_http${Font_color_suffix}】
+ ${Green_font_prefix} 7.${Font_color_suffix}  配置日志记录文件目录【${Green_font_prefix}$config_log${Font_color_suffix}】
+ ${Green_font_prefix} 8.${Font_color_suffix}  配置中间件可执行文件路径【${Green_font_prefix}$config_middleware${Font_color_suffix}】($middleware_status)
+ ${Green_font_prefix} 9.${Font_color_suffix}  配置录制文件名后缀【${Green_font_prefix}$config_capture_file_suffix${Font_color_suffix}】
+ ${Green_font_prefix}10.${Font_color_suffix}  配置回放过滤url请求正则表达式【${Green_font_prefix}$config_filter_regex${Font_color_suffix}】
+ ${Green_font_prefix}11.${Font_color_suffix}  手动编辑配置文件
+ ${Green_font_prefix}12.${Font_color_suffix}  从服务器或者本地更新配置文件
+ ${Green_font_prefix} 0.${Font_color_suffix}  取消" && echo
+  read -e -p " 请输入数字 [0-10]:" edit_type
   case "$edit_type" in
   0)
     exit 0
@@ -422,7 +433,7 @@ edit_config() {
     echo && echo -e " 请输入录制时监听的端口 [1-65535]" && echo
     read -e -p "(默认:$config_listen_port):" listen_port
     [[ -z "${listen_port}" ]] && echo "已取消..." && exit 1
-    if [[ $listen_port =~ ^[0-9]+$ && $listen_port -gt 0 && $listen_port -lt 25555 ]]; then
+    if [[ $listen_port =~ ^[0-9]+$ && $listen_port -gt 0 && $listen_port -lt 65535 ]]; then
       do_config 'config_listen_port' "$listen_port"
       echo -e "${Info} 配置成功！"
     else
@@ -484,7 +495,24 @@ edit_config() {
     fi
     ;;
   9)
+    echo && echo -e " 请输入录制时生成的文件名后缀" && echo
+    read -e -p "(默认:$config_capture_file_suffix):" capture_file_suffix
+    [[ -z "${capture_file_suffix}" ]] && echo "已取消..." && exit 1
+    do_config 'config_capture_file_suffix' "$capture_file_suffix"
+    echo -e "${Info} 配置成功！"
+    ;;
+  10)
+    echo && echo -e " 请输入回放时过滤url请求的正则表达式" && echo
+    read -e -p "(默认:$config_filter_regex):" filter_regex
+    [[ -z "${filter_regex}" ]] && echo "已取消..." && exit 1
+    do_config 'config_filter_regex' "$filter_regex"
+    echo -e "${Info} 配置成功！"
+    ;;
+  11)
     edit_config_manual
+    ;;
+  12)
+    update_config_file_from_server
     ;;
   *)
     echo "请输入正确数字 [0-9]"
@@ -501,6 +529,30 @@ ${Green_font_prefix}4.${Font_color_suffix} 如果要退出并不保存文件，�
 ${Green_font_prefix}5.${Font_color_suffix} 如果你想在本地编辑配置文件，那么配置文件位置： ${Green_font_prefix}$gor_config${Font_color_suffix} 。" && echo
   read -e -p "如果已经理解 vim 使用方法，请按任意键继续，如要取消请使用 Ctrl+C 。" var
   vim "$gor_config"
+}
+
+update_config_file_from_server() {
+  config
+  if [[ ! -e ${gor_config_template} ]]; then
+    echo -e "${Info} 配置文件模板不存在，正在从仓库中下载..."
+    download_file "$config_url" "$gor_config_template"
+  fi
+  [[ ! -e ${gor_config_template} ]] && echo -e "${Error} 配置模板文件不存在，请检查 !" && exit 1
+  cp "$gor_config_template" "$gor_config"
+  rm -rf "$gor_config_template"
+  do_config_no_update 'config_save_dir' "$config_save_dir"
+  do_config_no_update 'config_print_reply_info_log' "$config_print_reply_info_log"
+  do_config_no_update 'config_listen_port' "$config_listen_port"
+  do_config_no_update 'config_file_size_limit' "$config_file_size_limit"
+  do_config_no_update 'config_replay_speed' "$config_replay_speed"
+  do_config_no_update 'config_output_http' "$config_output_http"
+  do_config_no_update 'config_log' "$config_log"
+  do_config_no_update 'config_middleware' "'$config_middleware'"
+  do_config_no_update 'config_enable_middleware' "$config_enable_middleware"
+  do_config_no_update 'config_force_kill_gor' "$config_force_kill_gor"
+  do_config_no_update 'config_capture_file_suffix' "$config_capture_file_suffix"
+  do_config_no_update 'config_filter_regex' "$config_filter_regex"
+  echo -e "${Info} 配置文件更新成功！"
 }
 
 show_traffic_file() {
