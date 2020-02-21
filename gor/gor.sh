@@ -426,7 +426,7 @@ edit_config() {
  ${Green_font_prefix}11.${Font_color_suffix}  手动编辑配置文件
  ${Green_font_prefix}12.${Font_color_suffix}  从服务器或者本地更新配置文件
  ${Green_font_prefix} 0.${Font_color_suffix}  取消" && echo
-  read -e -p " 请输入数字 [0-10]:" edit_type
+  read -e -p " 请输入数字 [0-12]:" edit_type
   case "$edit_type" in
   0)
     exit 0
@@ -535,7 +535,7 @@ edit_config() {
     update_config_file_from_server
     ;;
   *)
-    echo "请输入正确数字 [0-9]"
+    echo "请输入正确数字 [0-12]"
     ;;
   esac
 }
