@@ -242,7 +242,12 @@ capture_traffic() {
   else
     filter_regex="$config_save_dir/${config_file_format}.gor"
   fi
-  cmd="$gor --input-raw :$listen_port --output-file=$filter_regex --output-file-queue-limit 0 --output-file-size-limit $config_file_size_limit"
+  if [[ "$config_print_debug_log" == "true" ]]; then
+    print_debug_log="--verbose --debug"
+  else
+    print_debug_log=''
+  fi
+  cmd="$gor --input-raw :$listen_port --output-file=$filter_regex --output-file-queue-limit 0 --output-file-size-limit $config_file_size_limit $print_debug_log"
   (eval "$cmd") >"$config_log/$gor_capture_log" 2>&1 &
   echo -e "${Info} gor 启动成功！"
 }
@@ -310,7 +315,12 @@ replay_traffic_while() {
   else
     filter_regex=''
   fi
-  cmd="$gor --input-file '$tmp_dir/*/*/*|$config_replay_speed' --output-http $config_output_http $middleware $filter_regex --http-allow-method GET --http-allow-method POST --http-allow-method PUT --http-allow-method DELETE --http-allow-method PATCH && rm -rf $tmp_dir"
+  if [[ "$config_print_debug_log" == "true" ]]; then
+    print_debug_log="--verbose --debug"
+  else
+    print_debug_log=''
+  fi
+  cmd="$gor --input-file '$tmp_dir/*/*/*|$config_replay_speed' --output-http $config_output_http $middleware $filter_regex --http-allow-method GET --http-allow-method POST --http-allow-method PUT --http-allow-method DELETE --http-allow-method PATCH $print_debug_log && rm -rf $tmp_dir"
   (eval "$cmd") >"$log_file" 2>&1 &
 }
 
@@ -551,7 +561,7 @@ update_config_file_from_server() {
   cp "$gor_config_template" "$gor_config"
   rm -rf "$gor_config_template"
   do_config_no_update 'config_save_dir' "$config_save_dir"
-  do_config_no_update 'config_print_reply_info_log' "$config_print_reply_info_log"
+  do_config_no_update 'config_print_debug_log' "$config_print_debug_log"
   do_config_no_update 'config_listen_port' "$config_listen_port"
   do_config_no_update 'config_file_size_limit' "$config_file_size_limit"
   do_config_no_update 'config_replay_speed' "$config_replay_speed"
