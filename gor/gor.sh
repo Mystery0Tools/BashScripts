@@ -576,8 +576,8 @@ update_config_file_from_server() {
 }
 
 show_traffic_file_print() {
-  echo -e ' ═════════════════════════════════════════ 已缓存时间片文件 ════════════════════════════════════════ '
-  echo -e '╔════════════════════════════════════════════ 输出开始 ════════════════════════════════════════════╗'
+  echo -e ' ═══════════════════════════════════════════════════ 已缓存时间片文件 ══════════════════════════════════════════════════ '
+  echo -e '╔══════════════════════════════════════════════════════ 输出开始 ══════════════════════════════════════════════════════╗'
   date_dir_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
   date_dir=()
   date_dir=($date_dir_string)
@@ -601,14 +601,14 @@ show_traffic_file_print() {
         time_minute_dir_name=${time_minute_dir[$time_minute_dir_index]}
         file_name=$(echo "$time_minute_dir_name" | cut -d_ -f1)
         file_size=$(ls -sh "$config_save_dir/$date_dir_name/$time_hour_dir_name/$time_minute_dir_name" | awk '{print $1}')
-        printf "║ 录制时间：【%-16s】 文件大小：【%6s】 文件路径：【%-30s】 ║\n" "$date_dir_name $time_hour_dir_name:$file_name" "$file_size" "$config_save_dir/$date_dir_name/$time_hour_dir_name/$time_minute_dir_name"
+        printf "║ 录制时间：【%-16s】 文件大小：【%6s】 文件路径：【%50s】 ║\n" "$date_dir_name $time_hour_dir_name:$file_name" "$file_size" "$config_save_dir/$date_dir_name/$time_hour_dir_name/$time_minute_dir_name"
         ((time_minute_dir_index++))
       done
       ((time_hour_dir_index++))
     done
     ((date_dir_index++))
   done
-  echo -e '╚════════════════════════════════════════════ 输出结束 ════════════════════════════════════════════╝'
+  echo -e '╚══════════════════════════════════════════════════════ 输出结束 ══════════════════════════════════════════════════════╝'
 }
 
 show_traffic_file() {
