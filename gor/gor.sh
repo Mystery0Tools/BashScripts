@@ -753,7 +753,7 @@ do_convert() {
     gor_file=${files[$index]}
     file_name=$(echo "$gor_file" | cut -d_ -f1)
     file_name_1=$(echo "$gor_file" | cut -d_ -f2)
-    parse_time "$file_name" # 解析文件名的日期时间，丢弃输出
+    parse_time "$file_name" # 解析文件名的日期时间
     true_file_name_date="$temp_convert_dir_do_not_delete/$year-$month-$day"
     true_file_name_date_hour="$true_file_name_date/$hour"
     true_file_name="$true_file_name_date_hour/${minute}_$file_name_1"
