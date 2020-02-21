@@ -582,7 +582,7 @@ ${Green_font_prefix}1.${Font_color_suffix} 一会自动分页显示之后，可�
 ${Green_font_prefix}2.${Font_color_suffix} 如果需要搜索有没有指定名称的文件，那么按 ${Green_font_prefix}/键${Font_color_suffix} 后，输入 ${Green_font_prefix}要搜索的文件名称${Font_color_suffix} 后，再按一下 ${Green_font_prefix}回车键${Font_color_suffix} 即可。
 ${Green_font_prefix}3.${Font_color_suffix} 如果要退出查看，那么按 ${Green_font_prefix}q键${Font_color_suffix} 即可。" && echo
   read -e -p "如果已经理解 less 使用方法，请按任意键继续，如要取消请使用 Ctrl+C 。" var
-  ls -lh "$config_save_dir" | grep -v 'total' | awk '{print $5, $6, $7, $8, $9}' | less
+  ls -lh "$config_save_dir/*/*" | grep -v 'total' | awk '{print $5, $6, $7, $8, $9}' | less
 }
 
 tar_traffic_file_while_time_hour() {
@@ -772,10 +772,11 @@ do_convert() {
     mv "$config_save_dir/$gor_file" "$true_file_name"
     ((index++))
   done
+  print_progress_bar "100" "[$length/$length]${progress_label[$progress_label_index]}"
   tput cnorm
   rm -rf "$config_save_dir"
   mv "$temp_convert_dir_do_not_delete" "$config_save_dir"
-  echo -e "${Info} 文件处理完成！"
+  echo && echo -e "${Info} 文件处理完成！"
 }
 
 case "$1" in
