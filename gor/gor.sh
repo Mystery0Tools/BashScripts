@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 sh_ver="1.0.4"
 base_url='https://raw.githubusercontent.com/Mystery0Tools/BashScripts/master/gor'
-base_gor_url='https://github.com/buger/goreplay/releases'
-gor_mac_url="$base_gor_url/download/v1.0.0/gor_1.0.0_mac.tar.gz"
-gor_x64_url="$base_gor_url/download/v1.0.0/gor_1.0.0_x64.tar.gz"
+base_gor_url='https://github.com/Mystery00/goreplay/releases'
+gor_mac_url="$base_gor_url/download/v1.0.0-fork/gor_1.0.0-fork_mac.tar.gz"
+gor_x64_url="$base_gor_url/download/v1.0.0-fork/gor_1.0.0-fork_x64.tar.gz"
 update_url="$base_url/gor.sh"
 config_url="$base_url/gor.config.template"
 gor='/usr/local/bin/gor'
