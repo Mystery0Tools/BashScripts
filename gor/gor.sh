@@ -763,7 +763,7 @@ view_capture_log() {
   config
   echo && echo -e "${Tip} 按 ${Red_font_prefix}Ctrl+C${Font_color_suffix} 终止查看日志" && echo -e "如果需要查看完整日志内容，请用 ${Red_font_prefix}cat $config_log/$gor_capture_log${Font_color_suffix} 命令。"
   file_size=$(ls -sh "$config_log/$gor_capture_log" | awk '{print $1}')
-  print "${Info} 日志文件大小：【%6s】\n" "$file_size"
+  printf "${Info} 日志文件大小：【%6s】\n" "$file_size"
   echo
   tail -f "$config_log/$gor_capture_log"
 }
@@ -772,7 +772,7 @@ view_reply_log() {
   config
   echo && echo -e "${Tip} 按 ${Red_font_prefix}Ctrl+C${Font_color_suffix} 终止查看日志" && echo -e "如果需要查看完整日志内容，请用 ${Red_font_prefix}cat $config_log/$gor_reply_log${Font_color_suffix} 命令。"
   file_size=$(ls -sh "$config_log/$gor_capture_log" | awk '{print $1}')
-  print "${Info} 日志文件大小：【%6s】\n" "$file_size"
+  printf "${Info} 日志文件大小：【%6s】\n" "$file_size"
   echo
   tail -f "$config_log/$gor_reply_log"
 }
