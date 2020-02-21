@@ -851,11 +851,11 @@ echo && echo -e " gor 管理脚本 ${Red_font_prefix}[v${sh_ver}]${Font_color_su
 ————————————
  ${Green_font_prefix} 1.${Font_color_suffix} 开始录制流量
  ${Green_font_prefix} 2.${Font_color_suffix} 停止当前运行的 gor 进程
- ${Green_font_prefix} 3.${Font_color_suffix} 回放流量
+ ${Green_font_prefix} 3.${Font_color_suffix} 开始回放流量
  ${Green_font_prefix} 4.${Font_color_suffix} 修改配置
 ————————————
- ${Green_font_prefix} 5.${Font_color_suffix} 查看 已缓存时间片文件
- ${Green_font_prefix} 6.${Font_color_suffix} 打包 已缓存时间片文件
+ ${Green_font_prefix} 5.${Font_color_suffix} 查看 录制文件列表
+ ${Green_font_prefix} 6.${Font_color_suffix} 打包 录制文件列表
  ${Green_font_prefix} 7.${Font_color_suffix} 查看 录制日志信息
  ${Green_font_prefix} 8.${Font_color_suffix} 查看 回放日志信息
 ————————————
