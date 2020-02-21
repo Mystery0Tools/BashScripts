@@ -575,6 +575,42 @@ update_config_file_from_server() {
   echo -e "${Info} 配置文件更新成功！"
 }
 
+show_traffic_file_print() {
+  echo -e "${Info} 已缓存时间片文件"
+  echo -e '╔══════════════════════════════════════════ 输出开始 ══════════════════════════════════════════╗'
+  date_dir_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
+  date_dir=()
+  date_dir=($date_dir_string)
+  date_dir_length=${#date_dir[*]}
+  local date_dir_index=0
+  while [[ $date_dir_index -lt $date_dir_length ]]; do
+    date_dir_name=${date_dir[$date_dir_index]}
+    time_hour_dir_string=$(ls -rt "$config_save_dir/$date_dir_name" | tr "\n" " ")
+    time_hour_dir=()
+    time_hour_dir=($time_hour_dir_string)
+    time_hour_dir_length=${#time_hour_dir[*]}
+    local time_hour_dir_index=0
+    while [[ $time_hour_dir_index -lt $time_hour_dir_length ]]; do
+      time_hour_dir_name=${time_hour_dir[$time_hour_dir_index]}
+      time_minute_dir_string=$(ls -rt "$config_save_dir/$date_dir_name/$time_hour_dir_name" | tr "\n" " ")
+      time_minute_dir=()
+      time_minute_dir=($time_minute_dir_string)
+      time_minute_dir_length=${#time_minute_dir[*]}
+      local time_minute_dir_index=0
+      while [[ $time_minute_dir_index -lt $time_minute_dir_length ]]; do
+        time_minute_dir_name=${time_minute_dir[$time_minute_dir_index]}
+        file_name=$(echo "$time_minute_dir_name" | cut -d_ -f1)
+        file_size=$(ls -sh "$config_save_dir/$date_dir_name/$time_hour_dir_name/$time_minute_dir_name" | awk '{print $1}')
+        echo -e "║ 录制时间：【$date_dir_name $time_hour_dir_name:$file_name】文件大小：【$file_size】 文件路径：【$config_save_dir/$date_dir_name/$time_hour_dir_name/$time_minute_dir_name】 ║"
+        ((time_minute_dir_index++))
+      done
+      ((time_hour_dir_index++))
+    done
+    ((date_dir_index++))
+  done
+  echo -e '╚══════════════════════════════════════════ 输出结束 ══════════════════════════════════════════╝'
+}
+
 show_traffic_file() {
   config
   echo -e "${Tip} 分页查看文件须知：
@@ -582,7 +618,7 @@ ${Green_font_prefix}1.${Font_color_suffix} 一会自动分页显示之后，可�
 ${Green_font_prefix}2.${Font_color_suffix} 如果需要搜索有没有指定名称的文件，那么按 ${Green_font_prefix}/键${Font_color_suffix} 后，输入 ${Green_font_prefix}要搜索的文件名称${Font_color_suffix} 后，再按一下 ${Green_font_prefix}回车键${Font_color_suffix} 即可。
 ${Green_font_prefix}3.${Font_color_suffix} 如果要退出查看，那么按 ${Green_font_prefix}q键${Font_color_suffix} 即可。" && echo
   read -e -p "如果已经理解 less 使用方法，请按任意键继续，如要取消请使用 Ctrl+C 。" var
-  ls -lh "$config_save_dir/*/*" | grep -v 'total' | awk '{print $5, $6, $7, $8, $9}' | less
+  show_traffic_file_print | less
 }
 
 tar_traffic_file_while_time_hour() {
