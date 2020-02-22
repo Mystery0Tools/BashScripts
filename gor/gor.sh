@@ -186,7 +186,13 @@ check_installed_status() {
 }
 
 check_pid() {
-  PID=$(ps -ef | grep "$gor" | grep "$current_dir" | grep -v grep | awk '{print $2}')
+  config
+  if [[ -n "$config_capture_file_suffix" ]]; then
+    file_name_regex="$config_save_dir/${config_file_format}_${config_capture_file_suffix}.gor"
+  else
+    file_name_regex="$config_save_dir/${config_file_format}.gor"
+  fi
+  PID=$(ps -ef | grep "$gor" | grep "output-file=$file_name_regex" | grep -v grep | awk '{print $2}')
 }
 
 config() {
@@ -247,16 +253,16 @@ capture_traffic() {
     do_config 'config_listen_port' "$listen_port"
   fi
   if [[ -n "$config_capture_file_suffix" ]]; then
-    filter_regex="$config_save_dir/${config_file_format}_${config_capture_file_suffix}.gor"
+    file_name_regex="$config_save_dir/${config_file_format}_${config_capture_file_suffix}.gor"
   else
-    filter_regex="$config_save_dir/${config_file_format}.gor"
+    file_name_regex="$config_save_dir/${config_file_format}.gor"
   fi
   if [[ "$config_print_debug_log" == "true" ]]; then
     print_debug_log="--verbose --debug"
   else
     print_debug_log=''
   fi
-  cmd="$gor --input-raw :$listen_port --output-file=$filter_regex --output-file-queue-limit 0 --output-file-size-limit $config_file_size_limit $print_debug_log"
+  cmd="$gor --input-raw :$listen_port --output-file=$file_name_regex --output-file-queue-limit 0 --output-file-size-limit $config_file_size_limit $print_debug_log"
   (eval "$cmd") >"$gor_capture_log" 2>&1 &
   echo -e "${Info} gor 启动成功！"
 }
