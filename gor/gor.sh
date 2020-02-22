@@ -6,11 +6,18 @@ gor_mac_url="$base_gor_url/download/v1.0.0-fork/gor_1.0.0-fork_mac.tar.gz"
 gor_x64_url="$base_gor_url/download/v1.0.0-fork/gor_1.0.0-fork_x64.tar.gz"
 update_url="$base_url/gor.sh"
 config_url="$base_url/gor.config.template"
+current_dir=$(pwd)
+# 配置文件目录
+config_dir="$current_dir/config"
+# 日志记录文件目录
+config_log="$current_dir/log"
 gor='/usr/local/bin/gor'
-gor_config='/etc/gor/gor.config'
+gor_config="$config_dir/gor.config"
 gor_config_template='gor.config.template'
-gor_capture_log='capture.log'
-gor_reply_log='reply.log'
+gor_capture_log="$config_log/capture.log"
+gor_reply_log="$config_log/reply.log"
+# 录制的流量文件存储目录，也是回放的目录
+config_save_dir="$current_dir/archive"
 # 录制的流量文件名称格式
 config_file_format='%Y-%m-%d/%H/%M'
 Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Yellow_font_prefix="\033[33m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Yellow_background_prefix="\033[43;37m" && Font_color_suffix="\033[0m"
@@ -116,11 +123,11 @@ check_system() {
 }
 
 check_dir() {
-  if [[ ! -e '/var/log/gor' ]]; then
-    mkdir '/var/log/gor'
+  if [[ ! -e "$config_dir" ]]; then
+    mkdir "$config_dir"
   fi
-  if [[ ! -e '/etc/gor' ]]; then
-    mkdir '/etc/gor'
+  if [[ ! -e "$config_log" ]]; then
+    mkdir "$config_log"
   fi
   if [[ ! -e "$gor_config" ]]; then
     if [[ ! -e ${gor_config_template} ]]; then
@@ -177,7 +184,7 @@ check_installed_status() {
 }
 
 check_pid() {
-  PID=$(ps -ef | grep "$gor" | grep -v grep | awk '{print $2}')
+  PID=$(ps -ef | grep "$gor" | grep "$current_dir" | grep -v grep | awk '{print $2}')
 }
 
 config() {
@@ -248,7 +255,7 @@ capture_traffic() {
     print_debug_log=''
   fi
   cmd="$gor --input-raw :$listen_port --output-file=$filter_regex --output-file-queue-limit 0 --output-file-size-limit $config_file_size_limit $print_debug_log"
-  (eval "$cmd") >"$config_log/$gor_capture_log" 2>&1 &
+  (eval "$cmd") >"$gor_capture_log" 2>&1 &
   echo -e "${Info} gor 启动成功！"
 }
 
@@ -401,7 +408,7 @@ replay_traffic() {
   if [[ ${unyn} != [Yy] ]]; then
     echo "已取消..." && exit 1
   fi
-  replay_traffic_while "$config_log/$gor_reply_log"
+  replay_traffic_while "$gor_reply_log"
   echo -e "${Info} gor 启动成功！"
 }
 
@@ -413,32 +420,23 @@ edit_config() {
     middleware_status='中间件已禁用'
   fi
   echo && echo -e "您要配置什么？
- ${Green_font_prefix} 1.${Font_color_suffix}  配置流量文件存储目录【${Green_font_prefix}$config_save_dir${Font_color_suffix}】
- ${Green_font_prefix} 2.${Font_color_suffix}  配置回放时是否打印详细日志【${Green_font_prefix}$config_print_debug_log${Font_color_suffix}】
- ${Green_font_prefix} 3.${Font_color_suffix}  配置录制时监听的端口【${Green_font_prefix}$config_listen_port${Font_color_suffix}】
- ${Green_font_prefix} 4.${Font_color_suffix}  配置录制时分片文件大小限制【${Green_font_prefix}$config_file_size_limit${Font_color_suffix}】
- ${Green_font_prefix} 5.${Font_color_suffix}  配置回放流量时的速度【${Green_font_prefix}$config_replay_speed${Font_color_suffix}】
- ${Green_font_prefix} 6.${Font_color_suffix}  配置回放流量时的http输出url【${Green_font_prefix}$config_output_http${Font_color_suffix}】
- ${Green_font_prefix} 7.${Font_color_suffix}  配置日志记录文件目录【${Green_font_prefix}$config_log${Font_color_suffix}】
- ${Green_font_prefix} 8.${Font_color_suffix}  配置中间件可执行文件路径【${Green_font_prefix}$config_middleware${Font_color_suffix}】($middleware_status)
- ${Green_font_prefix} 9.${Font_color_suffix}  配置录制文件名后缀【${Green_font_prefix}$config_capture_file_suffix${Font_color_suffix}】
- ${Green_font_prefix}10.${Font_color_suffix}  配置回放过滤url请求正则表达式【${Green_font_prefix}$config_filter_regex${Font_color_suffix}】
- ${Green_font_prefix}11.${Font_color_suffix}  手动编辑配置文件
- ${Green_font_prefix}12.${Font_color_suffix}  从服务器或者本地更新配置文件
+ ${Green_font_prefix} 1.${Font_color_suffix}  配置回放时是否打印详细日志【${Green_font_prefix}$config_print_debug_log${Font_color_suffix}】
+ ${Green_font_prefix} 2.${Font_color_suffix}  配置录制时监听的端口【${Green_font_prefix}$config_listen_port${Font_color_suffix}】
+ ${Green_font_prefix} 3.${Font_color_suffix}  配置录制时分片文件大小限制【${Green_font_prefix}$config_file_size_limit${Font_color_suffix}】
+ ${Green_font_prefix} 4.${Font_color_suffix}  配置回放流量时的速度【${Green_font_prefix}$config_replay_speed${Font_color_suffix}】
+ ${Green_font_prefix} 5.${Font_color_suffix}  配置回放流量时的http输出url【${Green_font_prefix}$config_output_http${Font_color_suffix}】
+ ${Green_font_prefix} 6.${Font_color_suffix}  配置中间件可执行文件路径【${Green_font_prefix}$config_middleware${Font_color_suffix}】($middleware_status)
+ ${Green_font_prefix} 7.${Font_color_suffix}  配置录制文件名后缀【${Green_font_prefix}$config_capture_file_suffix${Font_color_suffix}】
+ ${Green_font_prefix} 8.${Font_color_suffix}  配置回放过滤url请求正则表达式【${Green_font_prefix}$config_filter_regex${Font_color_suffix}】
+ ${Green_font_prefix} 9.${Font_color_suffix}  手动编辑配置文件
+ ${Green_font_prefix}10.${Font_color_suffix}  从服务器或者本地更新配置文件
  ${Green_font_prefix} 0.${Font_color_suffix}  取消" && echo
-  read -e -p " 请输入数字 [0-12]:" edit_type
+  read -e -p " 请输入数字 [0-10]:" edit_type
   case "$edit_type" in
   0)
     exit 0
     ;;
   1)
-    echo && echo -e " 请输入流量文件存储目录" && echo
-    read -e -p "(默认:$config_save_dir):" save_dir
-    [[ -z "${save_dir}" ]] && echo "已取消..." && exit 1
-    do_config 'config_save_dir' "$save_dir"
-    echo -e "${Info} 配置成功！"
-    ;;
-  2)
     echo && echo -e " 回放时打印详细的日志？(y/N)" && echo
     read -e -p "(默认: n):" unyn
     [[ -z ${unyn} ]] && unyn="n"
@@ -449,7 +447,7 @@ edit_config() {
     fi
     echo -e "${Info} 配置成功！"
     ;;
-  3)
+  2)
     echo && echo -e " 请输入录制时监听的端口 [1-65535]" && echo
     read -e -p "(默认:$config_listen_port):" listen_port
     [[ -z "${listen_port}" ]] && echo "已取消..." && exit 1
@@ -460,7 +458,7 @@ edit_config() {
       echo -e "${Error} 格式不正确！"
     fi
     ;;
-  4)
+  3)
     echo && echo -e " 请输入录制时分片文件大小限制" && echo
     read -e -p "(默认:$config_file_size_limit):" file_size
     [[ -z "${file_size}" ]] && echo "已取消..." && exit 1
@@ -471,7 +469,7 @@ edit_config() {
       echo -e "${Error} 格式不正确！"
     fi
     ;;
-  5)
+  4)
     echo && echo -e " 请输入回放流量时的速度(直接输入百分数，仅支持百分数)" && echo
     read -e -p "(默认:$config_replay_speed):" replay_speed
     [[ -z "${replay_speed}" ]] && echo "已取消..." && exit 1
@@ -482,21 +480,14 @@ edit_config() {
       echo -e "${Error} 格式不正确！"
     fi
     ;;
-  6)
+  5)
     echo && echo -e " 请输入回放流量时的http输出url" && echo
     read -e -p "(默认:$config_output_http):" output_http
     [[ -z "${output_http}" ]] && echo "已取消..." && exit 1
     do_config 'config_output_http' "$output_http"
     echo -e "${Info} 配置成功！"
     ;;
-  7)
-    echo && echo -e " 请输入日志记录文件目录" && echo
-    read -e -p "(默认:$config_log):" log_path
-    [[ -z "${log_path}" ]] && echo "已取消..." && exit 1
-    do_config 'config_log' "$log_path"
-    echo -e "${Info} 配置成功！"
-    ;;
-  8)
+  6)
     config_middleware=${config_middleware//\'/}
     echo && echo -e " 请输入中间件可执行文件路径" && echo
     read -e -p "(默认:$config_middleware):" middleware
@@ -514,28 +505,28 @@ edit_config() {
       echo -e "${Info} 中间件已禁用！"
     fi
     ;;
-  9)
+  7)
     echo && echo -e " 请输入录制时生成的文件名后缀" && echo
     read -e -p "(默认:$config_capture_file_suffix):" capture_file_suffix
     [[ -z "${capture_file_suffix}" ]] && echo "已取消..." && exit 1
     do_config 'config_capture_file_suffix' "$capture_file_suffix"
     echo -e "${Info} 配置成功！"
     ;;
-  10)
+  8)
     echo && echo -e " 请输入回放时过滤url请求的正则表达式" && echo
     read -e -p "(默认:$config_filter_regex):" filter_regex
     [[ -z "${filter_regex}" ]] && echo "已取消..." && exit 1
     do_config 'config_filter_regex' "$filter_regex"
     echo -e "${Info} 配置成功！"
     ;;
-  11)
+  9)
     edit_config_manual
     ;;
-  12)
+  10)
     update_config_file_from_server
     ;;
   *)
-    echo "请输入正确数字 [0-12]"
+    echo "请输入正确数字 [0-10]"
     ;;
   esac
 }
@@ -761,20 +752,20 @@ tar_traffic_file() {
 
 view_capture_log() {
   config
-  echo && echo -e "${Tip} 按 ${Red_font_prefix}Ctrl+C${Font_color_suffix} 终止查看日志" && echo -e "如果需要查看完整日志内容，请用 ${Red_font_prefix}cat $config_log/$gor_capture_log${Font_color_suffix} 命令。"
-  file_size=$(ls -sh "$config_log/$gor_capture_log" | awk '{print $1}')
+  echo && echo -e "${Tip} 按 ${Red_font_prefix}Ctrl+C${Font_color_suffix} 终止查看日志" && echo -e "如果需要查看完整日志内容，请用 ${Red_font_prefix}cat $gor_capture_log${Font_color_suffix} 命令。"
+  file_size=$(ls -sh "$gor_capture_log" | awk '{print $1}')
   printf "${Info} 日志文件大小：【%6s】\n" "$file_size"
   echo
-  tail -f "$config_log/$gor_capture_log"
+  tail -f "$gor_capture_log"
 }
 
 view_reply_log() {
   config
-  echo && echo -e "${Tip} 按 ${Red_font_prefix}Ctrl+C${Font_color_suffix} 终止查看日志" && echo -e "如果需要查看完整日志内容，请用 ${Red_font_prefix}cat $config_log/$gor_reply_log${Font_color_suffix} 命令。"
-  file_size=$(ls -sh "$config_log/$gor_capture_log" | awk '{print $1}')
+  echo && echo -e "${Tip} 按 ${Red_font_prefix}Ctrl+C${Font_color_suffix} 终止查看日志" && echo -e "如果需要查看完整日志内容，请用 ${Red_font_prefix}cat $gor_reply_log${Font_color_suffix} 命令。"
+  file_size=$(ls -sh "$gor_capture_log" | awk '{print $1}')
   printf "${Info} 日志文件大小：【%6s】\n" "$file_size"
   echo
-  tail -f "$config_log/$gor_reply_log"
+  tail -f "$gor_reply_log"
 }
 
 update_shell() {
@@ -821,11 +812,17 @@ do_convert() {
   echo && echo -e "${Info} 文件处理完成！"
 }
 
+do_printf_debug() {
+  printf "${Info} [%20s]:[%-100s]\n" "$1" "$2"
+}
+
 case "$1" in
 'clear')
-  rm -rf "$gor_config"
+  # 删除旧的配置文件目录
   rm -rf '/etc/gor'
   rm -rf '/var/log/gor'
+  rm -rf "$config_dir"
+  rm -rf "$config_log"
   echo -e "${Tip} 要卸载 gor 吗?  (y/N)"
   read -e -p "(默认: n):" unyn
   [[ -z ${unyn} ]] && unyn="n"
@@ -842,6 +839,26 @@ case "$1" in
   if [[ ${unyn} == [Yy] ]]; then
     do_convert
   fi
+  exit 0
+  ;;
+'test')
+  do_printf_debug "sh_ver" "$sh_ver"
+  do_printf_debug "base_url" "$base_url"
+  do_printf_debug "base_gor_url" "$base_gor_url"
+  do_printf_debug "gor_mac_url" "$gor_mac_url"
+  do_printf_debug "gor_x64_url" "$gor_x64_url"
+  do_printf_debug "update_url" "$update_url"
+  do_printf_debug "config_url" "$config_url"
+  do_printf_debug "current_dir" "$current_dir"
+  do_printf_debug "config_dir" "$config_dir"
+  do_printf_debug "config_log" "$config_log"
+  do_printf_debug "gor" "$gor"
+  do_printf_debug "gor_config" "$gor_config"
+  do_printf_debug "gor_config_template" "$gor_config_template"
+  do_printf_debug "gor_capture_log" "$gor_capture_log"
+  do_printf_debug "gor_reply_log" "$gor_reply_log"
+  do_printf_debug "config_save_dir" "$config_save_dir"
+  do_printf_debug "config_file_format" "$config_file_format"
   exit 0
   ;;
 esac

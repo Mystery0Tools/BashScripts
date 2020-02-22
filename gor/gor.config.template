@@ -1,5 +1,3 @@
-# 录制的流量文件存储目录，也是回放的目录
-config_save_dir=archive
 # 打印详细的日志
 config_print_debug_log=true
 # 录制时监听的端口
@@ -10,8 +8,6 @@ config_file_size_limit=256m
 config_replay_speed=100%
 # 回放流量时的http输出url
 config_output_http=http://localhost
-# 日志记录文件目录
-config_log=/var/log/gor
 # 中间件可执行文件路径，单引号不能删除
 config_middleware='middleware.sh'
 # 是否启用中间件
