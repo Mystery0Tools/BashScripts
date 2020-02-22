@@ -567,8 +567,12 @@ update_config_file_from_server() {
 }
 
 show_traffic_file_print() {
-  echo -e ' ═══════════════════════════════════════════════════ 已缓存时间片文件 ══════════════════════════════════════════════════ '
-  echo -e '╔══════════════════════════════════════════════════════ 输出开始 ══════════════════════════════════════════════════════╗'
+  echo -e '╔══════════════════════════════════════════════════════════ 已缓存时间片文件 ══════════════════════════════════════════════════════════╗'
+  file_size=$(du -sh "$config_save_dir" | awk '{print $1}')
+  printf "║ %-136s ║\n" "目录大小: [$file_size]"
+  file_num=$(ls -lR "$config_save_dir" | grep -c "^-")
+  printf "║ %-136s ║\n" "文件数量: [$file_num]"
+  echo -e '╠══════════════════════════════════════════════════════════════ 输出开始 ══════════════════════════════════════════════════════════════╣'
   date_dir_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
   date_dir=()
   date_dir=($date_dir_string)
@@ -592,14 +596,14 @@ show_traffic_file_print() {
         time_minute_dir_name=${time_minute_dir[$time_minute_dir_index]}
         file_name=$(echo "$time_minute_dir_name" | cut -d_ -f1)
         file_size=$(ls -sh "$config_save_dir/$date_dir_name/$time_hour_dir_name/$time_minute_dir_name" | awk '{print $1}')
-        printf "║ 录制时间：【%-16s】 文件大小：【%6s】 文件路径：【%50s】 ║\n" "$date_dir_name $time_hour_dir_name:$file_name" "$file_size" "$config_save_dir/$date_dir_name/$time_hour_dir_name/$time_minute_dir_name"
+        printf "║ Time: [%16s] FileSize: [%6s] Path: [%-80s] ║\n" "$date_dir_name $time_hour_dir_name:$file_name" "$file_size" "$config_save_dir/$date_dir_name/$time_hour_dir_name/$time_minute_dir_name"
         ((time_minute_dir_index++))
       done
       ((time_hour_dir_index++))
     done
     ((date_dir_index++))
   done
-  echo -e '╚══════════════════════════════════════════════════════ 输出结束 ══════════════════════════════════════════════════════╝'
+  echo -e '╚══════════════════════════════════════════════════════════════ 输出结束 ══════════════════════════════════════════════════════════════╝'
 }
 
 show_traffic_file() {
@@ -692,7 +696,7 @@ tar_traffic_file_while() {
 }
 
 tar_traffic_file_all() {
-  tar czf "$tar_file_name" "$config_save_dir"
+  tar czf "$tar_file_name.gz" "$config_save_dir"
 }
 
 tar_traffic_file() {
@@ -739,7 +743,7 @@ tar_traffic_file() {
   end_time_file_name=$(echo "$input_end_time" | sed 's/\//_/g' | sed 's/:/_/g' | sed 's/ /_/g')
   tar_file_name="${start_time_file_name}_${end_time_file_name}.tar"
   if [[ "$disable_time_split" == "true" ]]; then
-    tar_file_name='all.tar.gz'
+    tar_file_name='all.tar'
   fi
   touch "$tar_file_name"
   if [[ "$disable_time_split" == "true" ]]; then
@@ -748,6 +752,8 @@ tar_traffic_file() {
     do_something_background 'tar_traffic_file_while' "${Info} 正在处理文件  "
   fi
   echo -e "${Info} 打包完成！"
+  file_size=$(ls -sh "$tar_file_name.gz" | awk '{print $1}')
+  printf "${Info} 归档文件大小：【%6s】\n" "$file_size"
 }
 
 view_capture_log() {
