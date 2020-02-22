@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-sh_ver="1.0.4"
+sh_ver="1.0.5"
 base_url='https://raw.githubusercontent.com/Mystery0Tools/BashScripts/master/gor'
 base_gor_url='https://github.com/Mystery00/goreplay/releases'
 gor_mac_url="$base_gor_url/download/v1.0.0-fork/gor_1.0.0-fork_mac.tar.gz"
