@@ -762,6 +762,7 @@ tar_traffic_file() {
 view_capture_log() {
   config
   echo && echo -e "${Tip} 按 ${Red_font_prefix}Ctrl+C${Font_color_suffix} 终止查看日志" && echo -e "如果需要查看完整日志内容，请用 ${Red_font_prefix}cat $gor_capture_log${Font_color_suffix} 命令。"
+  [[ ! -e ${gor_capture_log} ]] && touch "$gor_capture_log"
   file_size=$(ls -sh "$gor_capture_log" | awk '{print $1}')
   printf "${Info} 日志文件大小：【%6s】\n" "$file_size"
   echo
@@ -771,7 +772,8 @@ view_capture_log() {
 view_reply_log() {
   config
   echo && echo -e "${Tip} 按 ${Red_font_prefix}Ctrl+C${Font_color_suffix} 终止查看日志" && echo -e "如果需要查看完整日志内容，请用 ${Red_font_prefix}cat $gor_reply_log${Font_color_suffix} 命令。"
-  file_size=$(ls -sh "$gor_capture_log" | awk '{print $1}')
+  [[ ! -e ${gor_reply_log} ]] && touch "$gor_reply_log"
+  file_size=$(ls -sh "$gor_reply_log" | awk '{print $1}')
   printf "${Info} 日志文件大小：【%6s】\n" "$file_size"
   echo
   tail -f "$gor_reply_log"
