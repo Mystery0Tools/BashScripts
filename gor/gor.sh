@@ -570,7 +570,7 @@ show_traffic_file_print() {
   echo -e '╔══════════════════════════════════════════════════════════ 已缓存时间片文件 ══════════════════════════════════════════════════════════╗'
   file_size=$(du -sh "$archive_dir_name" | awk '{print $1}')
   printf "║ %-136s ║\n" "目录大小: [$file_size]"
-  file_num=$(ls -lR "$archive_dir_name" | grep -c "^-")
+  file_num=$(ls -lR "$archive_dir_name" | grep -c '^-')
   printf "║ %-136s ║\n" "文件数量: [$file_num]"
   echo -e '╠══════════════════════════════════════════════════════════════ 输出开始 ══════════════════════════════════════════════════════════════╣'
   date_dir_string=$(ls -rt "$archive_dir_name" | tr "\n" " ")
@@ -744,16 +744,19 @@ tar_traffic_file() {
   tar_file_name="${start_time_file_name}_${end_time_file_name}.tar"
   if [[ "$disable_time_split" == "true" ]]; then
     tar_file_name='all.tar'
+  else
+    touch "$tar_file_name"
   fi
-  touch "$tar_file_name"
   if [[ "$disable_time_split" == "true" ]]; then
     do_something_background 'tar_traffic_file_all' "${Info} 正在处理文件  "
   else
     do_something_background 'tar_traffic_file_while' "${Info} 正在处理文件  "
   fi
   echo -e "${Info} 打包完成！"
+  file_sum=$(tar tvf "$tar_file_name.gz" | grep -c '^-')
   file_size=$(ls -sh "$tar_file_name.gz" | awk '{print $1}')
-  printf "${Info} 归档文件大小：【%6s】\n" "$file_size"
+  echo -e "${Info} 文件数量: [$file_sum]"
+  echo -e "${Info} 归档文件大小: [$file_size]"
 }
 
 view_capture_log() {
