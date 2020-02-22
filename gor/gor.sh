@@ -17,7 +17,9 @@ gor_config_template='gor.config.template'
 gor_capture_log="$config_log/capture.log"
 gor_reply_log="$config_log/reply.log"
 # 录制的流量文件存储目录，也是回放的目录
-config_save_dir="$current_dir/archive"
+archive_dir_name='archive'
+# 录制的流量文件存储目录，也是回放的目录
+config_save_dir="$current_dir/$archive_dir_name"
 # 录制的流量文件名称格式
 config_file_format='%Y-%m-%d/%H/%M'
 Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Yellow_font_prefix="\033[33m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Yellow_background_prefix="\033[43;37m" && Font_color_suffix="\033[0m"
@@ -245,9 +247,9 @@ capture_traffic() {
     do_config 'config_listen_port' "$listen_port"
   fi
   if [[ -n "$config_capture_file_suffix" ]]; then
-    filter_regex="$config_save_dir/${config_file_format}_${config_capture_file_suffix}.gor"
+    filter_regex="$archive_dir_name/${config_file_format}_${config_capture_file_suffix}.gor"
   else
-    filter_regex="$config_save_dir/${config_file_format}.gor"
+    filter_regex="$archive_dir_name/${config_file_format}.gor"
   fi
   if [[ "$config_print_debug_log" == "true" ]]; then
     print_debug_log="--verbose --debug"
@@ -308,7 +310,7 @@ process_copy_file() {
 
 replay_traffic_while() {
   log_file=$1
-  file_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
+  file_string=$(ls -rt "$archive_dir_name" | tr "\n" " ")
   files=($file_string)
   length=${#files[*]}
   process_copy_file
@@ -551,13 +553,11 @@ update_config_file_from_server() {
   [[ ! -e ${gor_config_template} ]] && echo -e "${Error} 配置模板文件不存在，请检查 !" && exit 1
   cp "$gor_config_template" "$gor_config"
   rm -rf "$gor_config_template"
-  do_config_no_update 'config_save_dir' "$config_save_dir"
   do_config_no_update 'config_print_debug_log' "$config_print_debug_log"
   do_config_no_update 'config_listen_port' "$config_listen_port"
   do_config_no_update 'config_file_size_limit' "$config_file_size_limit"
   do_config_no_update 'config_replay_speed' "$config_replay_speed"
   do_config_no_update 'config_output_http' "$config_output_http"
-  do_config_no_update 'config_log' "$config_log"
   do_config_no_update 'config_middleware' "'$config_middleware'"
   do_config_no_update 'config_enable_middleware' "$config_enable_middleware"
   do_config_no_update 'config_force_kill_gor' "$config_force_kill_gor"
@@ -568,26 +568,26 @@ update_config_file_from_server() {
 
 show_traffic_file_print() {
   echo -e '╔══════════════════════════════════════════════════════════ 已缓存时间片文件 ══════════════════════════════════════════════════════════╗'
-  file_size=$(du -sh "$config_save_dir" | awk '{print $1}')
+  file_size=$(du -sh "$archive_dir_name" | awk '{print $1}')
   printf "║ %-136s ║\n" "目录大小: [$file_size]"
-  file_num=$(ls -lR "$config_save_dir" | grep -c "^-")
+  file_num=$(ls -lR "$archive_dir_name" | grep -c "^-")
   printf "║ %-136s ║\n" "文件数量: [$file_num]"
   echo -e '╠══════════════════════════════════════════════════════════════ 输出开始 ══════════════════════════════════════════════════════════════╣'
-  date_dir_string=$(ls -rt "$config_save_dir" | tr "\n" " ")
+  date_dir_string=$(ls -rt "$archive_dir_name" | tr "\n" " ")
   date_dir=()
   date_dir=($date_dir_string)
   date_dir_length=${#date_dir[*]}
   local date_dir_index=0
   while [[ $date_dir_index -lt $date_dir_length ]]; do
     date_dir_name=${date_dir[$date_dir_index]}
-    time_hour_dir_string=$(ls -rt "$config_save_dir/$date_dir_name" | tr "\n" " ")
+    time_hour_dir_string=$(ls -rt "$archive_dir_name/$date_dir_name" | tr "\n" " ")
     time_hour_dir=()
     time_hour_dir=($time_hour_dir_string)
     time_hour_dir_length=${#time_hour_dir[*]}
     local time_hour_dir_index=0
     while [[ $time_hour_dir_index -lt $time_hour_dir_length ]]; do
       time_hour_dir_name=${time_hour_dir[$time_hour_dir_index]}
-      time_minute_dir_string=$(ls -rt "$config_save_dir/$date_dir_name/$time_hour_dir_name" | tr "\n" " ")
+      time_minute_dir_string=$(ls -rt "$archive_dir_name/$date_dir_name/$time_hour_dir_name" | tr "\n" " ")
       time_minute_dir=()
       time_minute_dir=($time_minute_dir_string)
       time_minute_dir_length=${#time_minute_dir[*]}
@@ -595,7 +595,7 @@ show_traffic_file_print() {
       while [[ $time_minute_dir_index -lt $time_minute_dir_length ]]; do
         time_minute_dir_name=${time_minute_dir[$time_minute_dir_index]}
         file_name=$(echo "$time_minute_dir_name" | cut -d_ -f1)
-        file_size=$(ls -sh "$config_save_dir/$date_dir_name/$time_hour_dir_name/$time_minute_dir_name" | awk '{print $1}')
+        file_size=$(ls -sh "$archive_dir_name/$date_dir_name/$time_hour_dir_name/$time_minute_dir_name" | awk '{print $1}')
         printf "║ Time: [%16s] FileSize: [%6s] Path: [%-80s] ║\n" "$date_dir_name $time_hour_dir_name:$file_name" "$file_size" "$config_save_dir/$date_dir_name/$time_hour_dir_name/$time_minute_dir_name"
         ((time_minute_dir_index++))
       done
@@ -618,7 +618,7 @@ ${Green_font_prefix}3.${Font_color_suffix} 如果要退出查看，那么按 ${G
 
 tar_traffic_file_while_time_hour() {
   check_start="$1"
-  time_minute_dir_string=$(ls -rt "$config_save_dir/$date_dir_name/$time_hour_dir_name" | tr "\n" " ")
+  time_minute_dir_string=$(ls -rt "$archive_dir_name/$date_dir_name/$time_hour_dir_name" | tr "\n" " ")
   time_minute_dir=()
   time_minute_dir=($time_minute_dir_string)
   time_minute_dir_length=${#time_minute_dir[*]}
@@ -631,11 +631,11 @@ tar_traffic_file_while_time_hour() {
     time_minute_dir_time=$(date -d "$time_minute_dir_date" +"%s")
     if [[ "$check_start" == "true" ]]; then
       if [[ $time_minute_dir_time -ge $start_time ]]; then
-        tar -rf "$tar_file_name" "$config_save_dir/$date_dir_name/$time_hour_dir_name/$file_name"*
+        tar -rf "$tar_file_name" "$archive_dir_name/$date_dir_name/$time_hour_dir_name/$file_name"*
       fi
     else
       if [[ $time_minute_dir_time -le $end_time ]]; then
-        tar -rf "$tar_file_name" "$config_save_dir/$date_dir_name/$time_hour_dir_name/$file_name"*
+        tar -rf "$tar_file_name" "$archive_dir_name/$date_dir_name/$time_hour_dir_name/$file_name"*
       fi
     fi
     ((time_minute_dir_index++))
@@ -643,7 +643,7 @@ tar_traffic_file_while_time_hour() {
 }
 
 tar_traffic_file_while_time() {
-  time_hour_dir_string=$(ls -rt "$config_save_dir/$date_dir_name" | tr "\n" " ")
+  time_hour_dir_string=$(ls -rt "$archive_dir_name/$date_dir_name" | tr "\n" " ")
   time_hour_dir=()
   time_hour_dir=($time_hour_dir_string)
   time_hour_dir_length=${#time_hour_dir[*]}
@@ -664,7 +664,7 @@ tar_traffic_file_while_time() {
       fi
     elif [[ $time_hour_dir_time -gt $start_time && $time_hour_dir_time -lt $end_time ]]; then
       # 不是边缘数据并且在指定时间段中，直接添加所有文件
-      tar -rf "$tar_file_name" "$config_save_dir/$date_dir_name/$time_hour_dir_name/"*
+      tar -rf "$tar_file_name" "$archive_dir_name/$date_dir_name/$time_hour_dir_name/"*
     fi
     ((time_hour_dir_index++))
   done
@@ -688,7 +688,7 @@ tar_traffic_file_while() {
       tar_traffic_file_while_time
     elif [[ $date_dir_time -gt $start_time && $date_dir_time -lt $end_time ]]; then
       # 不是边缘数据并且在指定时间段中，直接添加所有文件
-      tar -rf "$tar_file_name" "$config_save_dir/$date_dir_name/"*
+      tar -rf "$tar_file_name" "$archive_dir_name/$date_dir_name/"*
     fi
     ((date_dir_index++))
   done
@@ -696,7 +696,7 @@ tar_traffic_file_while() {
 }
 
 tar_traffic_file_all() {
-  tar czf "$tar_file_name.gz" "$config_save_dir"
+  tar czf "$tar_file_name.gz" "$archive_dir_name"
 }
 
 tar_traffic_file() {
