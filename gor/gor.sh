@@ -247,9 +247,9 @@ capture_traffic() {
     do_config 'config_listen_port' "$listen_port"
   fi
   if [[ -n "$config_capture_file_suffix" ]]; then
-    filter_regex="$archive_dir_name/${config_file_format}_${config_capture_file_suffix}.gor"
+    filter_regex="$config_save_dir/${config_file_format}_${config_capture_file_suffix}.gor"
   else
-    filter_regex="$archive_dir_name/${config_file_format}.gor"
+    filter_regex="$config_save_dir/${config_file_format}.gor"
   fi
   if [[ "$config_print_debug_log" == "true" ]]; then
     print_debug_log="--verbose --debug"
