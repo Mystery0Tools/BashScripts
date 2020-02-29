@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 sh_ver="1.0.5"
+debug=false
 base_url='https://raw.githubusercontent.com/Mystery0Tools/BashScripts/master/gor'
 base_gor_url='https://github.com/Mystery00/goreplay/releases'
 gor_mac_url="$base_gor_url/download/v1.0.0-fork/gor_1.0.0-fork_mac.tar.gz"
@@ -96,9 +97,39 @@ do_something_background() {
 }
 
 download_file() {
-  http_code=$(curl -I -m 10 -o /dev/null -s -w "%{http_code}" "$1")
-  [[ $http_code != 200 ]] && echo -e "${Error} 配置文件下载失败！" && exit 1
-  curl -# -o "$2" "$1"
+  local url="$1"
+  local file_name="$2"
+  local show_progress="$3"
+  local check_code="$4"
+
+  if [[ "$debug" == "true" ]]; then
+    echo && echo -e " 请输入 url" && echo
+    read -e -p "(默认:$url):" input_url
+    [[ -n "${input_url}" ]] && url=$input_url
+
+    echo && echo -e " 请输入 file_name" && echo
+    read -e -p "(默认:$file_name):" input_file_name
+    [[ -n "${input_file_name}" ]] && file_name="$input_file_name"
+  fi
+
+  if [[ "$check_code" == "true" ]]; then
+    local http_code=$(curl -I -m 10 -o /dev/null -s -w "%{http_code}" "$url")
+    [[ $http_code != 200 ]] && exit 1
+  fi
+
+  if [[ "$show_progress" == "true" ]]; then
+    cmd_show_progress="-#"
+  else
+    cmd_show_progress=''
+  fi
+  local cmd="curl $cmd_show_progress -o $file_name $url"
+  eval "$cmd"
+  return 0
+}
+
+download_config_file() {
+  download_file "$1" "$2" 'true' 'true'
+  [[ $? != 0 ]] && echo -e "${Error} 配置文件下载失败！" && exit 1
 }
 
 check_root() {
@@ -134,7 +165,7 @@ check_dir() {
   if [[ ! -e "$gor_config" ]]; then
     if [[ ! -e ${gor_config_template} ]]; then
       echo -e "${Info} 配置文件模板不存在，正在从仓库中下载..."
-      download_file "$config_url" "$gor_config_template"
+      download_config_file "$config_url" "$gor_config_template"
     fi
     [[ ! -e ${gor_config_template} ]] && echo -e "${Error} 配置模板文件不存在，请检查 !" && exit 1
     cp "$gor_config_template" "$gor_config"
@@ -149,13 +180,13 @@ check_installed_status() {
     'mac')
       if [[ ! -e 'gor_mac' ]]; then
         echo -e "${Tip} gor 没有安装，尝试下载，如果长时间卡在这里，请手动下载!"
-        curl -# -o 'gor_mac.tar.gz' "$gor_mac_url" && tar zxf 'gor_mac.tar.gz' && mv gor gor_mac
+        download_file "$gor_mac_url" 'gor_mac.tar.gz' 'true' 'true'
+        [[ $? != 0 ]] && echo -e "${Error} gor 下载失败，请手动下载 !" && exit 1
+        tar zxf 'gor_mac.tar.gz' && mv gor gor_mac
         echo -e "${Info} gor 下载成功!"
-        echo -e "${Info} 正在安装 gor !"
+        echo -e "${Info} 正在安装 gor ..."
       fi
-      if [[ ! -e 'gor_mac' ]]; then
-        echo -e "${Error} gor 下载失败，请手动下载 !" && exit 1
-      else
+      if [[ -e 'gor_mac' ]]; then
         # 当前目录存在，拷贝到 /usr/local/bin 去
         cp -rf 'gor_mac' "$gor"
         rm -rf 'gor_mac'
@@ -166,13 +197,13 @@ check_installed_status() {
     'linux')
       if [[ ! -e 'gor_x64' ]]; then
         echo -e "${Tip} gor 没有安装，尝试下载，如果长时间卡在这里，请手动下载!"
-        curl -# -o 'gor_x64.tar.gz' "$gor_x64_url" && tar zxf 'gor_x64.tar.gz' && mv gor gor_x64
+        download_file "$gor_x64_url" 'gor_x64.tar.gz' 'true' 'true'
+        [[ $? != 0 ]] && echo -e "${Error} gor 下载失败，请手动下载 !" && exit 1
+        tar zxf 'gor_x64.tar.gz' && mv gor gor_x64
         echo -e "${Info} gor 下载成功!"
-        echo -e "${Info} 正在安装 gor !"
+        echo -e "${Info} 正在安装 gor ..."
       fi
-      if [[ ! -e 'gor_x64' ]]; then
-        echo -e "${Error} gor 下载失败，请手动下载 !" && exit 1
-      else
+      if [[ -e 'gor_x64' ]]; then
         # 当前目录存在，拷贝到 /usr/local/bin 去
         cp -rf 'gor_x64' "$gor"
         rm -rf 'gor_x64'
@@ -554,7 +585,7 @@ update_config_file_from_server() {
   config
   if [[ ! -e ${gor_config_template} ]]; then
     echo -e "${Info} 配置文件模板不存在，正在从仓库中下载..."
-    download_file "$config_url" "$gor_config_template"
+    download_config_file "$config_url" "$gor_config_template"
   fi
   [[ ! -e ${gor_config_template} ]] && echo -e "${Error} 配置模板文件不存在，请检查 !" && exit 1
   cp "$gor_config_template" "$gor_config"
@@ -788,7 +819,8 @@ view_reply_log() {
 update_shell() {
   sh_new_ver=$(curl -s "$update_url" | grep 'sh_ver="' | awk -F "=" '{print $NF}' | sed 's/\"//g' | head -1)
   [[ -z ${sh_new_ver} ]] && echo -e "${Error} 无法链接到 Gitlab !" && exit 0
-  curl -# -o 'gor.sh' "$update_url" && chmod +x gor.sh
+  download_file "$update_url" 'gor.sh' 'true' 'true'
+  [[ $? != 0 ]] && echo -e "${Error} 脚本下载失败 !" && exit 1
   echo -e "脚本已更新为最新版本[ ${Red_font_prefix}${sh_new_ver}${Font_color_suffix} ] !(注意：因为更新方式为直接覆盖当前运行的脚本，所以可能下面会提示一些报错，无视即可)" && exit 0
 }
 
@@ -877,6 +909,17 @@ case "$1" in
   do_printf_debug "config_save_dir" "$config_save_dir"
   do_printf_debug "config_file_format" "$config_file_format"
   exit 0
+  ;;
+'debug')
+  debug=true
+
+  echo && echo -e " 请输入 base_url" && echo
+  read -e -p "(默认:$base_url):" input_base_url
+  [[ -n "${input_base_url}" ]] && base_url="$input_base_url"
+
+  echo && echo -e " 请输入 input_base_gor_url" && echo
+  read -e -p "(默认:$base_gor_url):" input_base_gor_url
+  [[ -n "${input_base_gor_url}" ]] && base_gor_url="$input_base_gor_url"
   ;;
 esac
 
