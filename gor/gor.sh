@@ -223,7 +223,7 @@ check_pid() {
   else
     file_name_regex="$config_save_dir/${config_file_format}.gor"
   fi
-  PID=$(ps -ef | grep "$gor" | grep "output-file=$file_name_regex|input-file" | grep -v grep | awk '{print $2}')
+  PID=$(ps -ef | grep "$gor" | grep "output-file=$file_name_regex\|input-file" | grep -v grep | awk '{print $2}')
 }
 
 config() {
