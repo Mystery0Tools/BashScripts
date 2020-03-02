@@ -224,7 +224,10 @@ check_pid() {
     file_name_regex="$config_save_dir/${config_file_format}.gor"
   fi
   tmp_dir="$current_dir/temp_dir_do_not_delete"
-  PID=$(ps -ef | grep "$gor" | grep "output-file=$file_name_regex\|input-file $tmp_dir" | grep -v grep | awk '{print $2}')
+  PID=$(ps -ef | grep "$gor" | grep "output-file=$file_name_regex" | grep -v 'grep' | awk '{print $2}')
+  if [[ -z "$PID" ]]; then
+    PID=$(ps -ef | grep "$gor" | grep "input-file $tmp_dir" | grep -v 'grep' | awk '{print $2}')
+  fi
 }
 
 config() {
@@ -367,8 +370,10 @@ replay_traffic_while() {
   else
     print_debug_log=''
   fi
-  cmd="$gor --input-file '$tmp_dir/*/*/*|$config_replay_speed' --output-http $config_output_http $middleware --output-http-track-response $filter_regex --http-allow-method GET --http-allow-method POST --http-allow-method PUT --http-allow-method DELETE --http-allow-method PATCH $print_debug_log && rm -rf $tmp_dir"
+  cmd="$gor --input-file '$tmp_dir/*/*/*|$config_replay_speed' --output-http $config_output_http $middleware --output-http-track-response $filter_regex --http-allow-method GET --http-allow-method POST --http-allow-method PUT --http-allow-method DELETE --http-allow-method PATCH $print_debug_log"
   (eval "$cmd") >"$log_file" 2>&1 &
+  wait $!
+  rm -rf "$tmp_dir"
 }
 
 replay_traffic() {
@@ -892,6 +897,7 @@ case "$1" in
   exit 0
   ;;
 'test')
+  check_pid
   do_printf_debug "sh_ver" "$sh_ver"
   do_printf_debug "base_url" "$base_url"
   do_printf_debug "base_gor_url" "$base_gor_url"
@@ -909,6 +915,7 @@ case "$1" in
   do_printf_debug "gor_reply_log" "$gor_reply_log"
   do_printf_debug "config_save_dir" "$config_save_dir"
   do_printf_debug "config_file_format" "$config_file_format"
+  do_printf_debug "PID" "$PID"
   exit 0
   ;;
 'debug')
