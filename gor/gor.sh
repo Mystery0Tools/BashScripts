@@ -366,7 +366,7 @@ replay_traffic_while() {
   else
     print_debug_log=''
   fi
-  cmd="$gor --input-file '$tmp_dir/*/*/*|$config_replay_speed' --output-http $config_output_http $middleware $filter_regex --http-allow-method GET --http-allow-method POST --http-allow-method PUT --http-allow-method DELETE --http-allow-method PATCH $print_debug_log && rm -rf $tmp_dir"
+  cmd="$gor --input-file '$tmp_dir/*/*/*|$config_replay_speed' --output-http $config_output_http $middleware --output-http-track-response $filter_regex --http-allow-method GET --http-allow-method POST --http-allow-method PUT --http-allow-method DELETE --http-allow-method PATCH $print_debug_log && rm -rf $tmp_dir"
   (eval "$cmd") >"$log_file" 2>&1 &
 }
 
