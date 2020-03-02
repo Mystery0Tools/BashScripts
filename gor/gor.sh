@@ -223,7 +223,8 @@ check_pid() {
   else
     file_name_regex="$config_save_dir/${config_file_format}.gor"
   fi
-  PID=$(ps -ef | grep "$gor" | grep "output-file=$file_name_regex\|input-file" | grep -v grep | awk '{print $2}')
+  tmp_dir="$current_dir/temp_dir_do_not_delete"
+  PID=$(ps -ef | grep "$gor" | grep "output-file=$file_name_regex\|input-file $tmp_dir" | grep -v grep | awk '{print $2}')
 }
 
 config() {
@@ -328,7 +329,7 @@ parse_time() {
 }
 
 process_copy_file() {
-  tmp_dir='temp_dir_do_not_delete'
+  tmp_dir="$current_dir/temp_dir_do_not_delete"
   rm -rf "$tmp_dir"
   mkdir "$tmp_dir"
   tar_file_name="tmp.tar"
