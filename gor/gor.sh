@@ -78,7 +78,8 @@ procing() {
 # 等待执行完成
 waiting() {
   local pid="$1"
-  procing &# 后台执行输出小棍子的进程
+  # 后台执行输出小棍子的进程
+  procing &
   local tmppid="$!"               # 获取小棍子进程的pid，用于后续终止
   wait "$pid"                     # 等待耗时操作执行完成
   tput rc                         # 恢复光标到最后保存的位置，替代小棍子
@@ -89,7 +90,8 @@ waiting() {
 do_something_background() {
   echo -ne "$2  " # 打印执行耗时操作之前的信息文本
   tput civis
-  eval "$1" &# 根据第一个参数执行操作
+  # 根据第一个参数执行操作
+  eval "$1" &
   waiting "$!" # 等待耗时操作执行
   tput cnorm
   tput el
@@ -337,16 +339,19 @@ process_copy_file() {
   mkdir "$tmp_dir"
   tar_file_name="tmp.tar"
   if [[ "$disable_time_split" == "true" ]]; then
-    tar_file_name='tmp.tar.gz'
-  fi
-  touch "$tar_file_name"
-  if [[ "$disable_time_split" == "true" ]]; then
     do_something_background 'tar_traffic_file_all' "${Info} 正在处理文件  "
   else
+    touch "$tar_file_name"
     do_something_background 'tar_traffic_file_while' "${Info} 正在处理文件  "
   fi
   tar -zxf 'tmp.tar.gz' --strip-components 1 -C "$tmp_dir/"
   rm -rf 'tmp.tar.gz'
+}
+
+replay_traffic_process() {
+  cmd="$gor --input-file '$tmp_dir/*/*/*|$config_replay_speed' --output-http $config_output_http $middleware --output-http-track-response $filter_regex --http-allow-method GET --http-allow-method POST --http-allow-method PUT --http-allow-method DELETE --http-allow-method PATCH $print_debug_log"
+  eval "$cmd"
+  rm -rf "$tmp_dir"
 }
 
 replay_traffic_while() {
@@ -370,10 +375,7 @@ replay_traffic_while() {
   else
     print_debug_log=''
   fi
-  cmd="$gor --input-file '$tmp_dir/*/*/*|$config_replay_speed' --output-http $config_output_http $middleware --output-http-track-response $filter_regex --http-allow-method GET --http-allow-method POST --http-allow-method PUT --http-allow-method DELETE --http-allow-method PATCH $print_debug_log"
-  (eval "$cmd") >"$log_file" 2>&1 &
-  wait $!
-  rm -rf "$tmp_dir"
+  replay_traffic_process >"$log_file" 2>&1 &
 }
 
 replay_traffic() {
